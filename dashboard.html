@@ -147,7 +147,7 @@
         <section class="card">
           <h3 style="margin:0 0 12px 0;font-size:15px">Milestone Heatmap <button class="card-edit" data-target="milestones" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
           <div style="overflow:auto">
-            <table>
+            <table id="milestoneTable">
               <thead>
                 <tr><th>Milestone</th><th>Status</th><th>% Complete</th><th>Risk</th></tr>
               </thead>
@@ -225,9 +225,9 @@
   <!-- keep modal editor triggers inside the editor modal UI -->
 
   <!-- Card edit popover -->
-  <div id="cardEditPopover" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:8px;padding:14px;box-shadow:0 12px 30px rgba(2,6,23,0.12);display:none;z-index:1001;width:420px;max-width:95%">
+  <div id="cardEditPopover" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:8px;padding:14px;box-shadow:0 12px 30px rgba(2,6,23,0.12);display:none;z-index:1001;width:760px;max-width:95%;min-width:360px;">
     <h4 id="cardEditTitle" style="margin:0 0 8px 0">Edit</h4>
-    <div id="cardEditBody"></div>
+    <div id="cardEditBody" style="max-height:60vh;overflow:auto"></div>
     <div style="display:flex;gap:8px;margin-top:10px">
       <button id="cardSaveBtn" style="flex:1;padding:8px;background:var(--accent);color:#fff;border-radius:6px;border:none;cursor:pointer">Save</button>
       <button id="cardCancelBtn" style="flex:1;padding:8px;background:#f3f6fb;color:#234;border-radius:6px;border:1px solid #e6edf6;cursor:pointer">Cancel</button>
@@ -287,11 +287,11 @@
           <button id="generateSeriesBtn" style="padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Generate Series</button>
         </div>
         <table id="burndownTable" style="width:100%;border-collapse:collapse">
-          <thead><tr><th style="text-align:left">Date</th><th>Planned Remaining</th><th>Actual Remaining</th><th></th></tr></thead>
+          <thead><tr><th style="text-align:left">Date</th><th>Planned Remaining</th><th>Actual Remaining</th><th>Risk</th><th></th></tr></thead>
           <tbody>
-            <tr><td><input class="b-date" type="text" value="2025-11-01" style="width:160px"></td><td><input class="b-planned" type="number" value="1000" style="width:120px"></td><td><input class="b-actual" type="number" value="1000" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
-            <tr><td><input class="b-date" type="text" value="2025-11-04" style="width:160px"></td><td><input class="b-planned" type="number" value="800" style="width:120px"></td><td><input class="b-actual" type="number" value="920" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
-            <tr><td><input class="b-date" type="text" value="2025-11-07" style="width:160px"></td><td><input class="b-planned" type="number" value="600" style="width:120px"></td><td><input class="b-actual" type="number" value="780" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
+            <tr><td><input class="b-date" type="text" value="2025-11-01" style="width:160px"></td><td><input class="b-planned" type="number" value="1000" style="width:120px"></td><td><input class="b-actual" type="number" value="1000" style="width:120px"></td><td><select class="b-risk"><option></option><option>Low</option><option>Medium</option><option>High</option></select></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
+            <tr><td><input class="b-date" type="text" value="2025-11-04" style="width:160px"></td><td><input class="b-planned" type="number" value="800" style="width:120px"></td><td><input class="b-actual" type="number" value="920" style="width:120px"></td><td><select class="b-risk"><option></option><option>Low</option><option selected>Medium</option><option>High</option></select></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
+            <tr><td><input class="b-date" type="text" value="2025-11-07" style="width:160px"></td><td><input class="b-planned" type="number" value="600" style="width:120px"></td><td><input class="b-actual" type="number" value="780" style="width:120px"></td><td><select class="b-risk"><option></option><option>Low</option><option>Medium</option><option selected>High</option></select></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
           </tbody>
         </table>
       </section>
@@ -396,6 +396,8 @@
       }
     });
     try{ const bCan = document.getElementById('burndown'); bCan.removeAttribute('height'); bCan.removeAttribute('width'); }catch(e){}
+    // per-row risk metadata for burndown/milestones (editable in modal)
+    let burndownRisk = [];
   </script>
   <script>
     // Popover behaviour
@@ -462,7 +464,7 @@
         const tbody = document.querySelector('#burndownTable tbody'); tbody.innerHTML = '';
         series.forEach(diso=>{
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td></td><td><input class="b-planned" type="number" value="0" style="width:120px"></td><td><input class="b-actual" type="number" value="0" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
+          tr.innerHTML = `<td></td><td><input class="b-planned" type="number" value="0" style="width:120px"></td><td><input class="b-actual" type="number" value="0" style="width:120px"></td><td><select class="b-risk"><option></option><option>Low</option><option>Medium</option><option>High</option></select></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
           const dateCell = tr.querySelector('td');
           const input = document.createElement('input'); input.className='b-date'; input.type='date'; input.value = diso; input.setAttribute('data-iso', diso);
           const labelSpan = document.createElement('span'); labelSpan.className='b-date-label'; labelSpan.style.marginLeft='8px'; labelSpan.textContent = new Intl.DateTimeFormat(navigator.language||'en-US',{month:'short',day:'numeric'}).format(new Date(diso+'T00:00:00'));
@@ -521,7 +523,8 @@
         const row = document.createElement('tr');
         const labelVal = labels[i] || '';
         const useDate = isIso(labelVal);
-        row.innerHTML = `<td></td><td><input class="b-planned" type="number" value="${pData[i]||0}" style="width:120px"></td><td><input class="b-actual" type="number" value="${aData[i]||0}" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
+        const riskVal = (burndownRisk[i] || '');
+        row.innerHTML = `<td></td><td><input class="b-planned" type="number" value="${pData[i]||0}" style="width:120px"></td><td><input class="b-actual" type="number" value="${aData[i]||0}" style="width:120px"></td><td><select class="b-risk"><option></option><option ${riskVal==='Low'?'selected':''}>Low</option><option ${riskVal==='Medium'?'selected':''}>Medium</option><option ${riskVal==='High'?'selected':''}>High</option></select></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
         const dateCell = row.querySelector('td');
         const input = document.createElement('input'); input.className='b-date';
         if(useDate){ input.type='date'; input.value = labelVal; input.setAttribute('data-iso', labelVal); }
@@ -565,7 +568,9 @@
       });
       const planned = rows.map(r=>Number(r.querySelector('.b-planned').value || 0));
       const actual = rows.map(r=>Number(r.querySelector('.b-actual').value || 0));
-      return {labels,planned,actual};
+      const risk = rows.map(r=>{ const s = r.querySelector('.b-risk'); return s ? (s.value||'') : ''; });
+      burndownRisk = risk.slice();
+      return {labels,planned,actual,risk};
     }
 
     // Persistence: save/load to localStorage
@@ -610,9 +615,20 @@
         burndown: {
           labels: burndownChart.data.labels,
           planned: burndownChart.data.datasets[0].data,
-          actual: burndownChart.data.datasets[1].data
+          actual: burndownChart.data.datasets[1].data,
+          risk: burndownRisk || []
         },
         blockers,
+        milestones: (function(){
+          const rows = Array.from(document.querySelectorAll('#milestoneTable tbody tr'));
+          if(rows.length===0) return null;
+          return rows.map(r=>({
+            title: r.children[0]?.textContent.trim() || '',
+            status: r.children[1]?.textContent.trim() || '',
+            percent: (function(){ const pb = r.querySelector('.progress-bar'); if(pb) return Number(pb.style.width.replace('%',''))||0; return 0; })(),
+            risk: r.children[3]?.textContent.trim() || ''
+          }));
+        })(),
         quickFacts: {
           active: document.getElementById('q-active').textContent || '0',
           exec: document.getElementById('q-exec').textContent || '0',
@@ -652,7 +668,18 @@
           burndownChart.data.labels = state.burndown.labels || burndownChart.data.labels;
           burndownChart.data.datasets[0].data = state.burndown.planned || burndownChart.data.datasets[0].data;
           burndownChart.data.datasets[1].data = state.burndown.actual || burndownChart.data.datasets[1].data;
+          burndownRisk = state.burndown.risk || [];
           burndownChart.update();
+        }
+        if(state.milestones){
+          // apply milestones into the main milestone table
+          const tbody = document.querySelector('#milestoneTable tbody');
+          if(tbody){ tbody.innerHTML = ''; state.milestones.forEach(m=>{
+            const tr = document.createElement('tr');
+            const statusClass = (m.status==='On Track')? 'on' : (m.status==='Delayed'? 'delayed' : 'critical');
+            tr.innerHTML = `<td>${m.title}</td><td><span class="status ${statusClass}">${m.status}</span></td><td><div class="progress-wrap"><div class="progress-bar" style="width:${m.percent}%"></div></div></td><td>${m.risk||''}</td>`;
+            tbody.appendChild(tr);
+          }); }
         }
         // restore blockers and quick facts if present
         if(state.blockers){
@@ -705,37 +732,7 @@
       editorModal.style.display = 'none';
     });
 
-    function generateSnapshot(){
-      // Create a clone of document HTML and strip edit elements
-      const docClone = document.documentElement.cloneNode(true);
-      // remove edit button, popover and modal
-      const removeSelectors = ['#editBtn','#editPopover','#editorModal'];
-      removeSelectors.forEach(sel=>{ const el = docClone.querySelector(sel); if(el) el.remove(); });
-      // also remove any scripts that include 'Chart' to avoid runtime errors — but embed chart images by converting canvases to dataURL
-      // convert canvases to images
-      const canvases = Array.from(document.querySelectorAll('canvas'));
-      canvases.forEach((c)=>{
-        const data = c.toDataURL('image/png');
-        const img = document.createElement('img'); img.src = data; img.style.maxWidth='100%';
-        const parent = c.parentElement;
-        parent.replaceChild(img, c);
-      });
-      // build HTML string
-      const html = '<!doctype html>\n' + docClone.outerHTML;
-      return html;
-    }
-
-    function downloadSnapshot(){
-      const html = generateSnapshot();
-      const blob = new Blob([html], {type: 'text/html'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      const today = new Date().toISOString().slice(0,10);
-      a.href = url; a.download = `dashboard_snapshot_${today}.html`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    }
-
-    if(modalExport) modalExport.addEventListener('click', downloadSnapshot);
-    if(exportQuickBtn) exportQuickBtn.addEventListener('click', downloadSnapshot);
+    
 
     // Wire the floating export button to the enhanced snapshot exporter
     const exportBtn = document.getElementById('exportBtn');
@@ -769,11 +766,12 @@
 
     // Burndown CSV export/import
     document.getElementById('burndownExportCsv').addEventListener('click', ()=>{
-      const rows = [['Date','Planned','Actual']];
+      const rows = [['Date','Planned','Actual','Risk']];
       const labels = burndownChart.data.labels || [];
       const p = burndownChart.data.datasets[0].data || [];
       const a = burndownChart.data.datasets[1].data || [];
-      for(let i=0;i<labels.length;i++) rows.push([labels[i]||'',p[i]||'',a[i]||'']);
+      const r = burndownRisk || [];
+      for(let i=0;i<labels.length;i++) rows.push([labels[i]||'',p[i]||'',a[i]||'', r[i]||'']);
       downloadCsv('burndown.csv', arrayToCsv(rows));
     });
     document.getElementById('burndownImportCsv').addEventListener('click', ()=>{ document.getElementById('burndownCsvInput').click(); });
@@ -781,16 +779,18 @@
       const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>{
         const lines = r.result.split(/\r?\n/).filter(Boolean).map(l=>l.split(/, */));
         if(lines.length>=2){
-          const labels=[]; const p=[]; const a=[];
+          const labels=[]; const p=[]; const a=[]; const r=[];
           for(let i=1;i<lines.length;i++){
             const raw = (lines[i][0]||'').trim();
             labels.push(raw);
             p.push(Number(lines[i][1]||0));
             a.push(Number(lines[i][2]||0));
+            r.push((lines[i][3]||'').trim());
           }
           burndownChart.data.labels = labels;
           burndownChart.data.datasets[0].data = p;
           burndownChart.data.datasets[1].data = a;
+          burndownRisk = r;
           burndownChart.update();
         }
       }; r.readAsText(f);
@@ -839,8 +839,8 @@
       const today = new Date().toISOString().slice(0,10);
       a.href = url; a.download = `dashboard_snapshot_${today}.html`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }
-    if(modalExport){ modalExport.removeEventListener('click', downloadSnapshot); modalExport.addEventListener('click', downloadSnapshotEnhanced); }
-    if(exportQuickBtn){ exportQuickBtn.removeEventListener('click', downloadSnapshot); exportQuickBtn.addEventListener('click', downloadSnapshotEnhanced); }
+    if(modalExport){ modalExport.addEventListener('click', downloadSnapshotEnhanced); }
+    if(exportQuickBtn){ exportQuickBtn.addEventListener('click', downloadSnapshotEnhanced); }
 
     // Card edit handlers (Blockers and Quick Facts)
     (function(){
@@ -955,10 +955,40 @@
           const a1 = progressChart.data.datasets[1].data[0] || 0;
           const a2 = progressChart.data.datasets[1].data[1] || 0;
           const a3 = progressChart.data.datasets[1].data[2] || 0;
+          // read current status and risk from the milestone table if present
+          const trows = document.querySelectorAll('#milestoneTable tbody tr');
+          const s1 = trows[0]?.querySelector('.status')?.textContent.trim() || 'On Track';
+          const s2 = trows[1]?.querySelector('.status')?.textContent.trim() || 'On Track';
+          const s3 = trows[2]?.querySelector('.status')?.textContent.trim() || 'On Track';
+          const r1 = trows[0]?.children[3]?.textContent.trim() || '';
+          const r2 = trows[1]?.children[3]?.textContent.trim() || '';
+          const r3 = trows[2]?.children[3]?.textContent.trim() || '';
           cardEditBody.innerHTML = `
-            <label style="display:block;margin-bottom:8px">Test Design %<input id="milestone_m1" type="number" min="0" max="100" value="${a1}" style="width:100%;padding:6px"></label>
-            <label style="display:block;margin-bottom:8px">Test Execution %<input id="milestone_m2" type="number" min="0" max="100" value="${a2}" style="width:100%;padding:6px"></label>
-            <label style="display:block;margin-bottom:8px">UAT %<input id="milestone_m3" type="number" min="0" max="100" value="${a3}" style="width:100%;padding:6px"></label>
+            <div style="overflow:auto">
+              <table style="width:100%;border-collapse:collapse">
+                <thead><tr><th style="text-align:left">Milestone</th><th>Status</th><th>% Complete</th><th>Risk</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Test Design</td>
+                    <td><select class="edit-m-status" style="padding:6px"><option${s1==='On Track'?' selected':''}>On Track</option><option${s1==='Delayed'?' selected':''}>Delayed</option><option${s1==='Critical'?' selected':''}>Critical</option></select></td>
+                    <td><input class="edit-m-percent" type="number" min="0" max="100" value="${a1}" style="width:100px;padding:6px"></td>
+                    <td><select class="edit-m-risk" style="padding:6px"><option></option><option${r1==='Low'?' selected':''}>Low</option><option${r1==='Medium'?' selected':''}>Medium</option><option${r1==='High'?' selected':''}>High</option></select></td>
+                  </tr>
+                  <tr>
+                    <td>Test Execution</td>
+                    <td><select class="edit-m-status" style="padding:6px"><option${s2==='On Track'?' selected':''}>On Track</option><option${s2==='Delayed'?' selected':''}>Delayed</option><option${s2==='Critical'?' selected':''}>Critical</option></select></td>
+                    <td><input class="edit-m-percent" type="number" min="0" max="100" value="${a2}" style="width:100px;padding:6px"></td>
+                    <td><select class="edit-m-risk" style="padding:6px"><option></option><option${r2==='Low'?' selected':''}>Low</option><option${r2==='Medium'?' selected':''}>Medium</option><option${r2==='High'?' selected':''}>High</option></select></td>
+                  </tr>
+                  <tr>
+                    <td>UAT</td>
+                    <td><select class="edit-m-status" style="padding:6px"><option${s3==='On Track'?' selected':''}>On Track</option><option${s3==='Delayed'?' selected':''}>Delayed</option><option${s3==='Critical'?' selected':''}>Critical</option></select></td>
+                    <td><input class="edit-m-percent" type="number" min="0" max="100" value="${a3}" style="width:100px;padding:6px"></td>
+                    <td><select class="edit-m-risk" style="padding:6px"><option></option><option${r3==='Low'?' selected':''}>Low</option><option${r3==='Medium'?' selected':''}>Medium</option><option${r3==='High'?' selected':''}>High</option></select></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           `;
           openCardPopover();
           return;
@@ -1082,14 +1112,36 @@
             document.querySelectorAll('.progress-bar')[1].style.width = m2v + '%';
             document.querySelectorAll('.progress-bar')[2].style.width = m3v + '%';
           }else if(currentCard==='milestones'){
-            const mm1 = Number(document.getElementById('milestone_m1')?.value || 0);
-            const mm2 = Number(document.getElementById('milestone_m2')?.value || 0);
-            const mm3 = Number(document.getElementById('milestone_m3')?.value || 0);
-            progressChart.data.datasets[1].data = [mm1,mm2,mm3];
+            // read the table rows inside the popover
+            const rows = Array.from(cardEditBody.querySelectorAll('tbody tr'));
+            const percents = rows.map(r=>Number(r.querySelector('.edit-m-percent')?.value || 0));
+            const statuses = rows.map(r=>r.querySelector('.edit-m-status')?.value || 'On Track');
+            const risks = rows.map(r=>r.querySelector('.edit-m-risk')?.value || '');
+            // apply to progress chart (first three assumed)
+            progressChart.data.datasets[1].data = percents.slice(0,3);
             progressChart.update();
-            document.querySelectorAll('.progress-bar')[0].style.width = mm1 + '%';
-            document.querySelectorAll('.progress-bar')[1].style.width = mm2 + '%';
-            document.querySelectorAll('.progress-bar')[2].style.width = mm3 + '%';
+            // apply to main milestone table
+            const tbody = document.querySelector('#milestoneTable tbody');
+            if(tbody){
+              rows.forEach((r,i)=>{
+                const s = statuses[i] || 'On Track';
+                const cls = s==='On Track' ? 'on' : s==='Delayed' ? 'delayed' : 'critical';
+                const pct = percents[i] || 0;
+                const risk = risks[i] || '';
+                if(tbody.children[i]){
+                  tbody.children[i].children[1].innerHTML = `<span class="status ${cls}">${s}</span>`;
+                  tbody.children[i].children[2].querySelector('.progress-bar').style.width = pct + '%';
+                  tbody.children[i].children[3].textContent = risk;
+                } else {
+                  // append new row if main table has fewer rows
+                  const tr = document.createElement('tr');
+                  tr.innerHTML = `<td>${r.children[0].textContent}</td><td><span class="status ${cls}">${s}</span></td><td><div class="progress-wrap"><div class="progress-bar" style="width:${pct}%"></div></div></td><td>${risk}</td>`;
+                  tbody.appendChild(tr);
+                }
+              });
+            }
+            // sync burndownRisk for matching indices
+            for(let i=0;i<risks.length;i++) burndownRisk[i] = risks[i] || '';
           }
         closeCardPopover(); currentCard=null;
         saveState();
