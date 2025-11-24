@@ -93,8 +93,10 @@
 <body>
   <div class="container">
     <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <h1 style="margin:0;font-size:20px">"On The Same Page" Dashboard</h1>
-      <div style="color:var(--muted);font-size:13px">Updated: <strong>Today</strong></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <img src="logo.svg" alt="Dashboard" style="height:32px">
+      </div>
+      <div style="color:var(--muted);font-size:13px">Updated: <strong id="lastUpdated"></strong></div>
     </header>
 
     <div class="grid">
@@ -762,6 +764,14 @@
     }
     // load on start
     loadState();
+
+    // Set current date in locale format
+    const lastUpdatedEl = document.getElementById('lastUpdated');
+    if(lastUpdatedEl){
+      const today = new Date();
+      const formatter = new Intl.DateTimeFormat(navigator.language || 'en-NZ', { day: 'numeric', month: 'short', year: 'numeric' });
+      lastUpdatedEl.textContent = formatter.format(today);
+    }
 
     // Save to localStorage on chart updates and KPI changes
     const origProgressUpdate = progressChart.update.bind(progressChart);
