@@ -734,9 +734,27 @@
         currentCard = target;
         // Support quick per-card edit for KPIs and Charts by reusing existing UI
         if(target === 'kpis'){
-          // open the small KPI popover and populate values
-          pop.style.display = 'block';
-          populateForm();
+          // open the centered card edit popover for KPIs (with milestones)
+          currentCard = 'kpis';
+          cardEditTitle.textContent = 'Edit KPIs & Milestones';
+          const executed = document.getElementById('kpi-executed').textContent.replace('%','')||0;
+          const passed = document.getElementById('kpi-passed').textContent.replace('%','')||0;
+          const defects = document.getElementById('kpi-defects').textContent||0;
+          const delay = document.getElementById('kpi-delay').textContent.replace(' days','')||0;
+          const m1 = progressChart.data.datasets[1].data[0] || 0;
+          const m2 = progressChart.data.datasets[1].data[1] || 0;
+          const m3 = progressChart.data.datasets[1].data[2] || 0;
+          cardEditBody.innerHTML = `
+            <label style="display:block;margin-bottom:8px">Test Cases Executed (%)<input id="kpi_edit_executed" type="number" min="0" max="100" value="${executed}" style="width:100%;padding:6px"></label>
+            <label style="display:block;margin-bottom:8px">Test Cases Passed (%)<input id="kpi_edit_passed" type="number" min="0" max="100" value="${passed}" style="width:100%;padding:6px"></label>
+            <label style="display:block;margin-bottom:8px">Defects Open<input id="kpi_edit_defects" type="number" min="0" value="${defects}" style="width:100%;padding:6px"></label>
+            <label style="display:block;margin-bottom:8px">Delay vs Plan (days)<input id="kpi_edit_delay" type="number" value="${delay}" style="width:100%;padding:6px"></label>
+            <hr style="border:none;border-top:1px solid #eef3fb;margin:8px 0">
+            <label style="display:block;margin-bottom:8px">Test Design %<input id="kpi_edit_m1" type="number" min="0" max="100" value="${m1}" style="width:100%;padding:6px"></label>
+            <label style="display:block;margin-bottom:8px">Test Execution %<input id="kpi_edit_m2" type="number" min="0" max="100" value="${m2}" style="width:100%;padding:6px"></label>
+            <label style="display:block;margin-bottom:8px">UAT %<input id="kpi_edit_m3" type="number" min="0" max="100" value="${m3}" style="width:100%;padding:6px"></label>
+          `;
+          cardPopover.style.display = 'block';
           return;
         }
         if(target === 'charts'){
@@ -822,11 +840,30 @@
             const div = document.createElement('div'); div.innerHTML = `<div style="font-weight:600">${title}</div><div style="color:var(--muted);font-size:13px">${note}</div>`;
             li.appendChild(span); li.appendChild(div); ul.appendChild(li);
           });
-        }else if(currentCard==='quickfacts'){
+          }else if(currentCard==='quickfacts'){
           document.getElementById('q-active').textContent = document.getElementById('cf-active').value;
           document.getElementById('q-exec').textContent = document.getElementById('cf-exec').value;
           document.getElementById('q-critical').textContent = document.getElementById('cf-critical').value;
-        }
+          }else if(currentCard==='kpis'){
+            // read KPI edits from card popover
+            const ex = document.getElementById('kpi_edit_executed')?.value || 0;
+            const pa = document.getElementById('kpi_edit_passed')?.value || 0;
+            const df = document.getElementById('kpi_edit_defects')?.value || 0;
+            const dl = document.getElementById('kpi_edit_delay')?.value || 0;
+            document.getElementById('kpi-executed').textContent = ex + '%';
+            document.getElementById('kpi-passed').textContent = pa + '%';
+            document.getElementById('kpi-defects').textContent = df;
+            document.getElementById('kpi-delay').textContent = dl + ' days';
+            // apply milestone edits
+            const m1v = Number(document.getElementById('kpi_edit_m1')?.value || 0);
+            const m2v = Number(document.getElementById('kpi_edit_m2')?.value || 0);
+            const m3v = Number(document.getElementById('kpi_edit_m3')?.value || 0);
+            progressChart.data.datasets[1].data = [m1v,m2v,m3v];
+            progressChart.update();
+            document.querySelectorAll('.progress-bar')[0].style.width = m1v + '%';
+            document.querySelectorAll('.progress-bar')[1].style.width = m2v + '%';
+            document.querySelectorAll('.progress-bar')[2].style.width = m3v + '%';
+          }
         cardPopover.style.display='none'; currentCard=null;
         saveState();
       });
