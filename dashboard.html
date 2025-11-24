@@ -264,9 +264,9 @@
         <table id="burndownTable" style="width:100%;border-collapse:collapse">
           <thead><tr><th style="text-align:left">Date</th><th>Planned Remaining</th><th>Actual Remaining</th><th></th></tr></thead>
           <tbody>
-            <tr><td><input class="b-date" type="date" value="2025-11-01" style="width:160px"></td><td><input class="b-planned" type="number" value="1000" style="width:120px"></td><td><input class="b-actual" type="number" value="1000" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
-            <tr><td><input class="b-date" type="date" value="2025-11-04" style="width:160px"></td><td><input class="b-planned" type="number" value="800" style="width:120px"></td><td><input class="b-actual" type="number" value="920" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
-            <tr><td><input class="b-date" type="date" value="2025-11-07" style="width:160px"></td><td><input class="b-planned" type="number" value="600" style="width:120px"></td><td><input class="b-actual" type="number" value="780" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
+            <tr><td><input class="b-date" type="text" value="2025-11-01" style="width:160px"></td><td><input class="b-planned" type="number" value="1000" style="width:120px"></td><td><input class="b-actual" type="number" value="1000" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
+            <tr><td><input class="b-date" type="text" value="2025-11-04" style="width:160px"></td><td><input class="b-planned" type="number" value="800" style="width:120px"></td><td><input class="b-actual" type="number" value="920" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
+            <tr><td><input class="b-date" type="text" value="2025-11-07" style="width:160px"></td><td><input class="b-planned" type="number" value="600" style="width:120px"></td><td><input class="b-actual" type="number" value="780" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
           </tbody>
         </table>
       </section>
@@ -378,7 +378,7 @@
     if(addRowBtn) addRowBtn.addEventListener('click', ()=>{
       const tbody = document.querySelector('#burndownTable tbody');
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td><input class="b-date" type="date" value="" style="width:160px"></td><td><input class="b-planned" type="number" value="0" style="width:120px"></td><td><input class="b-actual" type="number" value="0" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
+      tr.innerHTML = `<td><input class="b-date" type="text" value="" style="width:160px"></td><td><input class="b-planned" type="number" value="0" style="width:120px"></td><td><input class="b-actual" type="number" value="0" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
       tbody.appendChild(tr);
     });
     document.addEventListener('click', (e)=>{ if(e.target && e.target.classList && e.target.classList.contains('removeRow')) e.target.closest('tr').remove(); });
@@ -399,7 +399,7 @@
       const aData = burndownChart.data.datasets[1].data || [];
       for(let i=0;i<labels.length;i++){
         const row = document.createElement('tr');
-        row.innerHTML = `<td><input class="b-date" type="date" value="${labels[i]}" style="width:160px"></td><td><input class="b-planned" type="number" value="${pData[i]||0}" style="width:120px"></td><td><input class="b-actual" type="number" value="${aData[i]||0}" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
+        row.innerHTML = `<td><input class="b-date" type="text" value="${labels[i]}" style="width:160px"></td><td><input class="b-planned" type="number" value="${pData[i]||0}" style="width:120px"></td><td><input class="b-actual" type="number" value="${aData[i]||0}" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
         bTbody.appendChild(row);
       }
     }
