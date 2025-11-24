@@ -255,11 +255,30 @@
 
       <section>
         <h4 style="margin:0 0 8px 0">Burndown (time series)</h4>
-        <div style="margin-bottom:8px;display:flex;gap:8px">
+        <div style="margin-bottom:8px;display:flex;gap:12px;align-items:center">
+          <div style="color:var(--muted);font-size:13px">Today: <strong id="todayLabel"></strong></div>
           <button id="addRowBtn" style="padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Add Row</button>
           <button id="burndownExportCsv" style="padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Export CSV</button>
           <button id="burndownImportCsv" style="padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Import CSV</button>
           <input type="file" id="burndownCsvInput" accept="text/csv" style="display:none">
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+          <label style="display:flex;gap:6px;align-items:center;font-size:13px">Start Date: <input id="burndownStartDate" type="date" style="padding:6px"></label>
+          <label style="display:flex;gap:6px;align-items:center;font-size:13px">Span: 
+            <select id="burndownSpan" style="padding:6px">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="fortnightly">Fortnightly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </label>
+          <button id="toggleAutoFill" type="button" style="padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Auto-fill: OFF ▾</button>
+          <div id="autoFillPanel" style="display:none;margin-left:8px;align-items:center;gap:8px">
+            <label style="display:flex;gap:6px;align-items:center;font-size:13px">From<input id="plannedStart" type="number" value="1000" style="width:80px;padding:6px"></label>
+            <label style="display:flex;gap:6px;align-items:center;font-size:13px">To<input id="plannedEnd" type="number" value="0" style="width:80px;padding:6px"></label>
+          </div>
+          <div style="margin-left:auto"></div>
+          <button id="generateSeriesBtn" style="padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Generate Series</button>
         </div>
         <table id="burndownTable" style="width:100%;border-collapse:collapse">
           <thead><tr><th style="text-align:left">Date</th><th>Planned Remaining</th><th>Actual Remaining</th><th></th></tr></thead>
@@ -351,7 +370,23 @@
         responsive:false,
         maintainAspectRatio:false,
         plugins:{legend:{position:'bottom'}},
-        scales:{y:{beginAtZero:true}}
+        scales:{
+          x: {
+            ticks: {
+              callback: function(value, index, ticks){
+                try{
+                  const label = this.chart.data.labels[index];
+                  if(/^\d{4}-\d{2}-\d{2}$/.test(label)){
+                    const d = new Date(label + 'T00:00:00');
+                    return new Intl.DateTimeFormat(navigator.language||'en-US',{month:'short',day:'numeric'}).format(d);
+                  }
+                  return label;
+                }catch(e){ return value; }
+              }
+            }
+          },
+          y:{beginAtZero:true}
+        }
       }
     });
     try{ const bCan = document.getElementById('burndown'); bCan.removeAttribute('height'); bCan.removeAttribute('width'); }catch(e){}
@@ -378,10 +413,83 @@
     if(addRowBtn) addRowBtn.addEventListener('click', ()=>{
       const tbody = document.querySelector('#burndownTable tbody');
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td><input class="b-date" type="text" value="" style="width:160px"></td><td><input class="b-planned" type="number" value="0" style="width:120px"></td><td><input class="b-actual" type="number" value="0" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
+      // new rows default to empty ISO date (user can pick)
+      tr.innerHTML = `<td><input class="b-date" type="date" value="" style="width:160px"></td><td><input class="b-planned" type="number" value="0" style="width:120px"></td><td><input class="b-actual" type="number" value="0" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
       tbody.appendChild(tr);
     });
     document.addEventListener('click', (e)=>{ if(e.target && e.target.classList && e.target.classList.contains('removeRow')) e.target.closest('tr').remove(); });
+
+    // Series generator helpers
+    function toIsoDate(d){ return d.toISOString().slice(0,10); }
+    function addDays(d, n){ const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+    function addMonths(d, n){ const r = new Date(d); r.setMonth(r.getMonth() + n); return r; }
+    function computeSeries(startIso, span){
+      if(!startIso) return [];
+      const start = new Date(startIso + 'T00:00:00');
+      const today = new Date();
+      const out = [];
+      let cur = new Date(start);
+      const stepDays = (s)=> s==='daily'?1:s==='weekly'?7:s==='fortnightly'?14:0;
+      if(span === 'monthly'){
+        while(cur <= today){ out.push(toIsoDate(cur)); cur = addMonths(cur,1); }
+      } else {
+        const step = stepDays(span) || 1;
+        while(cur <= today){ out.push(toIsoDate(cur)); cur = addDays(cur, step); }
+      }
+      return out;
+    }
+
+    // wire generate button
+    const generateBtn = document.getElementById('generateSeriesBtn');
+    const startInput = document.getElementById('burndownStartDate');
+    const spanSelect = document.getElementById('burndownSpan');
+    const todayLabel = document.getElementById('todayLabel');
+    const plannedStartInput = document.getElementById('plannedStart');
+    const plannedEndInput = document.getElementById('plannedEnd');
+    if(todayLabel) todayLabel.textContent = new Date().toISOString().slice(0,10);
+    if(generateBtn){
+      generateBtn.addEventListener('click', ()=>{
+        const start = startInput.value;
+        const span = spanSelect.value;
+        if(!start){ alert('Please choose a start date'); return; }
+        const series = computeSeries(start, span);
+        const tbody = document.querySelector('#burndownTable tbody'); tbody.innerHTML = '';
+        series.forEach(diso=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td></td><td><input class="b-planned" type="number" value="0" style="width:120px"></td><td><input class="b-actual" type="number" value="0" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
+          const dateCell = tr.querySelector('td');
+          const input = document.createElement('input'); input.className='b-date'; input.type='date'; input.value = diso; input.setAttribute('data-iso', diso);
+          const labelSpan = document.createElement('span'); labelSpan.className='b-date-label'; labelSpan.style.marginLeft='8px'; labelSpan.textContent = new Intl.DateTimeFormat(navigator.language||'en-US',{month:'short',day:'numeric'}).format(new Date(diso+'T00:00:00'));
+          input.addEventListener('input',(e)=>{ const v=e.target.value.trim(); if(/^\d{4}-\d{2}-\d{2}$/.test(v)){ e.target.setAttribute('data-iso',v); labelSpan.textContent = new Intl.DateTimeFormat(navigator.language||'en-US',{month:'short',day:'numeric'}).format(new Date(v+'T00:00:00')); } else { e.target.removeAttribute('data-iso'); labelSpan.textContent = v; } });
+          dateCell.appendChild(input); dateCell.appendChild(labelSpan);
+          tbody.appendChild(tr);
+        });
+        // if auto-fill panel is visible, compute linear ramp for planned values
+        try{
+          const autoVisible = document.getElementById('autoFillPanel')?.style.display !== 'none';
+          if(autoVisible){
+            const from = Number(plannedStartInput.value||0);
+            const to = Number(plannedEndInput.value||0);
+            const rows = Array.from(document.querySelectorAll('#burndownTable tbody tr'));
+            const n = rows.length;
+            rows.forEach((r,i)=>{
+              const v = Math.round(from + (to - from) * (i/(Math.max(1,n-1))));
+              const inp = r.querySelector('.b-planned'); if(inp) inp.value = v;
+            });
+          }
+        }catch(e){}
+      });
+    }
+    // collapse/expand auto-fill panel
+    const toggleAutoBtn = document.getElementById('toggleAutoFill');
+    const autoFillPanel = document.getElementById('autoFillPanel');
+    if(toggleAutoBtn && autoFillPanel){
+      toggleAutoBtn.addEventListener('click', ()=>{
+        const open = autoFillPanel.style.display !== 'none';
+        autoFillPanel.style.display = open ? 'none' : 'flex';
+        toggleAutoBtn.textContent = open ? 'Auto-fill: OFF ▾' : 'Auto-fill: ON ▴';
+      });
+    }
 
     function populateModal(){
       // progress: set inputs from current chart
@@ -397,16 +505,55 @@
       const labels = burndownChart.data.labels || [];
       const pData = burndownChart.data.datasets[0].data || [];
       const aData = burndownChart.data.datasets[1].data || [];
+      const locale = navigator.language || 'en-US';
+      function isIso(s){ return typeof s==='string' && /^\d{4}-\d{2}-\d{2}$/.test(s); }
+      function isoToDisplay(iso){ try{ const d = new Date(iso+'T00:00:00'); return new Intl.DateTimeFormat(locale,{month:'short',day:'numeric'}).format(d);}catch(e){return iso;} }
       for(let i=0;i<labels.length;i++){
         const row = document.createElement('tr');
-        row.innerHTML = `<td><input class="b-date" type="text" value="${labels[i]}" style="width:160px"></td><td><input class="b-planned" type="number" value="${pData[i]||0}" style="width:120px"></td><td><input class="b-actual" type="number" value="${aData[i]||0}" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
+        const labelVal = labels[i] || '';
+        const useDate = isIso(labelVal);
+        row.innerHTML = `<td></td><td><input class="b-planned" type="number" value="${pData[i]||0}" style="width:120px"></td><td><input class="b-actual" type="number" value="${aData[i]||0}" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
+        const dateCell = row.querySelector('td');
+        const input = document.createElement('input'); input.className='b-date';
+        if(useDate){ input.type='date'; input.value = labelVal; input.setAttribute('data-iso', labelVal); }
+        else { input.type='text'; input.value = labelVal; }
+        const labelSpan = document.createElement('span'); labelSpan.className='b-date-label'; labelSpan.style.marginLeft='8px'; labelSpan.textContent = useDate ? isoToDisplay(labelVal) : labelVal;
+        input.addEventListener('input',(e)=>{
+          const v = e.target.value.trim();
+          if(isIso(v)){ e.target.type='date'; e.target.setAttribute('data-iso',v); labelSpan.textContent = isoToDisplay(v); }
+          else { e.target.type='text'; e.target.removeAttribute('data-iso'); labelSpan.textContent = v; }
+        });
+        dateCell.appendChild(input); dateCell.appendChild(labelSpan);
         bTbody.appendChild(row);
       }
+      // set sensible defaults for start date and span
+      try{
+        const isoLabels = labels.filter(l=>/^\d{4}-\d{2}-\d{2}$/.test(l));
+        if(isoLabels.length>0){
+          startInput.value = isoLabels[0];
+          // try to guess span by average delta in days
+          if(isoLabels.length>1){
+            const d0 = new Date(isoLabels[0]+'T00:00:00'); const d1 = new Date(isoLabels[1]+'T00:00:00');
+            const delta = Math.round((d1 - d0)/(24*3600*1000));
+            if(delta<=1) spanSelect.value='daily'; else if(delta<=8) spanSelect.value='weekly'; else if(delta<=15) spanSelect.value='fortnightly'; else spanSelect.value='monthly';
+          } else { spanSelect.value='weekly'; }
+        } else {
+          // default to 30 days ago
+          const d = new Date(); d.setDate(d.getDate()-30); startInput.value = d.toISOString().slice(0,10);
+          spanSelect.value = 'weekly';
+        }
+      }catch(e){}
     }
 
     function readBurndownTable(){
       const rows = Array.from(document.querySelectorAll('#burndownTable tbody tr'));
-      const labels = rows.map(r=>r.querySelector('.b-date').value || '');
+      const labels = rows.map(r=>{
+        const inp = r.querySelector('.b-date');
+        if(!inp) return '';
+        // prefer canonical ISO stored in data-iso attribute
+        if(inp.getAttribute && inp.getAttribute('data-iso')) return inp.getAttribute('data-iso');
+        return inp.value || '';
+      });
       const planned = rows.map(r=>Number(r.querySelector('.b-planned').value || 0));
       const actual = rows.map(r=>Number(r.querySelector('.b-actual').value || 0));
       return {labels,planned,actual};
@@ -597,8 +744,16 @@
         const lines = r.result.split(/\r?\n/).filter(Boolean).map(l=>l.split(/, */));
         if(lines.length>=2){
           const labels=[]; const p=[]; const a=[];
-          for(let i=1;i<lines.length;i++){ labels.push(lines[i][0]||''); p.push(Number(lines[i][1]||0)); a.push(Number(lines[i][2]||0)); }
-          burndownChart.data.labels = labels; burndownChart.data.datasets[0].data = p; burndownChart.data.datasets[1].data = a; burndownChart.update();
+          for(let i=1;i<lines.length;i++){
+            const raw = (lines[i][0]||'').trim();
+            labels.push(raw);
+            p.push(Number(lines[i][1]||0));
+            a.push(Number(lines[i][2]||0));
+          }
+          burndownChart.data.labels = labels;
+          burndownChart.data.datasets[0].data = p;
+          burndownChart.data.datasets[1].data = a;
+          burndownChart.update();
         }
       }; r.readAsText(f);
     });
