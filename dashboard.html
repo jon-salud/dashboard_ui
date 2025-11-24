@@ -1132,6 +1132,14 @@
         }
         openCardPopover();
       }));
+      // Fallback: ensure the Charts edit button always opens the modal
+      const chartsCardBtn = document.querySelector('.card-edit[data-target="charts"]');
+      if(chartsCardBtn){ chartsCardBtn.addEventListener('click', (e)=>{ e.stopPropagation(); showModal(editorModal); populateModal(); }); }
+      // Delegated listener (robust): catch clicks that might not reach the button directly
+      document.addEventListener('click', (e)=>{
+        const b = e.target.closest && e.target.closest('.card-edit[data-target="charts"]');
+        if(b){ try{ console.log('Charts edit button clicked'); }catch(e){} e.preventDefault(); e.stopPropagation(); showModal(editorModal); populateModal(); }
+      });
       cardCancelBtn.addEventListener('click', ()=>{ closeCardPopover(); currentCard=null; });
       cardSaveBtn.addEventListener('click', ()=>{
         if(currentCard==='blockers'){
