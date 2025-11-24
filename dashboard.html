@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Test Progress Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    
+    :root{
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --muted:#708096;
+      --accent:#3b82f6;
+      --success:#16a34a;
+      --warning:#f97316;
+      --danger:#ef4444;
+      --glass: rgba(255,255,255,0.6);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    
+    html,body{margin:0;padding:0;background:var(--bg);color:#0f172a;min-height:100vh;}
+    
+    .container{
+      max-width:1200px;margin:28px auto;padding:20px;
+    }
+    .grid{
+      display:grid;grid-template-columns:1fr;gap:20px;
+    }
+    @media(min-width:900px){
+      .grid{grid-template-columns: 1fr 360px;align-items:start}
+    }
+    .main{
+      display:grid;gap:20px;
+    }
+    .card{
+      background:var(--card);border-radius:10px;padding:16px;box-shadow:0 6px 18px rgba(12,20,30,0.06);
+    }
+    .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    @media(min-width:700px){.kpis{grid-template-columns:repeat(4,1fr)}}
+    .kpi{padding:14px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.6),var(--card));display:flex;flex-direction:column}
+    .kpi .label{font-size:13px;color:var(--muted)}
+    .kpi .value{font-size:20px;font-weight:700;margin-top:6px}
+    .kpi .delta{font-size:12px;color:var(--muted);margin-top:6px}
+    .kpi .spark{height:36px !important;margin-top:10px;display:block;width:100% !important;max-height:36px !important}
+
+    .charts{display:grid;grid-template-columns:1fr;gap:20px}
+    @media(min-width:900px){.charts{grid-template-columns:1fr 1fr}}
+
+    /* Table styles */
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;text-align:left;font-size:14px}
+    thead th{font-size:12px;color:var(--muted);font-weight:600}
+    .status{
+      display:inline-block;padding:6px 10px;border-radius:999px;font-weight:600;color:#fff;font-size:12px
+    }
+    .status.on{background:var(--success)}
+    .status.delayed{background:var(--warning)}
+    .status.critical{background:var(--danger)}
+
+    .progress-wrap{background:#eef2f7;border-radius:8px;overflow:hidden;height:10px;width:120px}
+    .progress-bar{height:10px;background:linear-gradient(90deg,var(--accent),#60a5fa);}
+
+    .aside{display:grid;gap:20px}
+    .placeholder{display:flex;align-items:center;justify-content:center;height:220px;border:2px dashed rgba(15,23,42,0.06);color:var(--muted);font-weight:600;border-radius:8px;background:linear-gradient(180deg,rgba(240,246,255,0.6),transparent)}
+
+    /* Fixed height chart containers - NO responsive height */
+    .chart-wrapper{
+      width: 100%;
+      height: 250px;
+      position: relative;
+    }
+    .chart-wrapper canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .footer-note{font-size:13px;color:var(--muted);text-align:center;padding:6px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h1 style="margin:0;font-size:20px">Test Progress Dashboard</h1>
+      <div style="color:var(--muted);font-size:13px">Updated: <strong>Today</strong></div>
+    </header>
+
+    <div class="grid">
+      <main class="main">
+        <section class="card">
+          <div class="kpis">
+            <div class="kpi">
+              <div class="label">Test Cases Executed</div>
+              <div class="value" id="kpi-executed">72%</div>
+              <div class="delta">+6% vs yesterday</div>
+              <canvas class="spark" id="spark1"></canvas>
+            </div>
+            <div class="kpi">
+              <div class="label">Test Cases Passed</div>
+              <div class="value" id="kpi-passed">65%</div>
+              <div class="delta">+4% vs yesterday</div>
+              <canvas class="spark" id="spark2"></canvas>
+            </div>
+            <div class="kpi">
+              <div class="label">Defects Open</div>
+              <div class="value" id="kpi-defects">18</div>
+              <div class="delta">3 high priority</div>
+              <canvas class="spark" id="spark3"></canvas>
+            </div>
+            <div class="kpi">
+              <div class="label">Delay vs Plan</div>
+              <div class="value" id="kpi-delay">2 days</div>
+              <div class="delta">Since last milestone</div>
+              <canvas class="spark" id="spark4"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <section class="card charts">
+          <div>
+            <h3 style="margin:0 0 8px 0;font-size:15px">Progress vs Plan</h3>
+            <div class="chart-wrapper"><canvas id="progressBar"></canvas></div>
+          </div>
+
+          <div>
+            <h3 style="margin:0 0 8px 0;font-size:15px">Burndown Chart</h3>
+            <div class="chart-wrapper"><canvas id="burndown"></canvas></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin:0 0 12px 0;font-size:15px">Milestone Heatmap</h3>
+          <div style="overflow:auto">
+            <table>
+              <thead>
+                <tr><th>Milestone</th><th>Status</th><th>% Complete</th><th>Risk</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Test Design</td>
+                  <td><span class="status on">On Track</span></td>
+                  <td><div class="progress-wrap"><div class="progress-bar" style="width:92%"></div></div></td>
+                  <td>Low</td>
+                </tr>
+                <tr>
+                  <td>Test Execution</td>
+                  <td><span class="status delayed">Delayed</span></td>
+                  <td><div class="progress-wrap"><div class="progress-bar" style="width:68%"></div></div></td>
+                  <td>Medium</td>
+                </tr>
+                <tr>
+                  <td>UAT</td>
+                  <td><span class="status critical">Critical</span></td>
+                  <td><div class="progress-wrap"><div class="progress-bar" style="width:40%"></div></div></td>
+                  <td>High</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <aside class="aside">
+        <div class="card">
+          <h3 style="margin:0 0 10px 0;font-size:15px">Blockers Drill-Down</h3>
+          <div style="padding:8px">
+            <ul style="list-style:none;margin:0;padding:0;">
+              <li style="margin-bottom:10px;display:flex;align-items:flex-start;gap:10px">
+                <span class="status critical" style="min-width:72px">Critical</span>
+                <div>
+                  <div style="font-weight:600">API Integration Failures</div>
+                  <div style="color:var(--muted);font-size:13px">Blocked by vendor bug — test runs failing on auth endpoint. Estimated fix: 2 days.</div>
+                </div>
+              </li>
+              <li style="margin-bottom:10px;display:flex;align-items:flex-start;gap:10px">
+                <span class="status delayed" style="min-width:72px">Delayed</span>
+                <div>
+                  <div style="font-weight:600">Test Environment Provisioning</div>
+                  <div style="color:var(--muted);font-size:13px">Staging environment missing required DB snapshot. ETA: today evening.</div>
+                </div>
+              </li>
+              <li style="margin-bottom:10px;display:flex;align-items:flex-start;gap:10px">
+                <span class="status on" style="min-width:72px">On Track</span>
+                <div>
+                  <div style="font-weight:600">Test Data Refresh</div>
+                  <div style="color:var(--muted);font-size:13px">Automated job scheduled and running as expected.</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin:0 0 10px 0;font-size:15px">Quick Facts</h3>
+          <ul style="margin:0;padding-left:18px;color:var(--muted)">
+            <li>Active testers: <strong>12</strong></li>
+            <li>Avg execution/day: <strong>340</strong></li>
+            <li>Open critical defects: <strong>3</strong></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer-note">Built with HTML, CSS Grid and Chart.js • Sample data only</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Sparklines
+    // Sample small sparks
+    function drawSpark(id, data, color){
+      const canvas = document.getElementById(id);
+      const ctx = canvas.getContext('2d');
+      // create non-responsive tiny chart so Chart.js doesn't resize the page
+      const chart = new Chart(ctx, {
+        type: 'line',
+        data: {labels:data.map((_,i)=>i), datasets:[{data:data,borderColor:color,backgroundColor:'transparent',tension:0.4,pointRadius:0}]},
+        options:{
+          plugins:{legend:{display:false}},
+          scales:{x:{display:false},y:{display:false}},
+          elements:{line:{borderWidth:2}},
+          responsive:false,
+          maintainAspectRatio:false
+        }
+      });
+
+      // Ensure display size is small and remove any large inline attributes Chart.js may have set
+      try{
+        canvas.style.height = '36px';
+        canvas.style.maxHeight = '36px';
+        canvas.style.width = '100%';
+        canvas.removeAttribute('height');
+        canvas.removeAttribute('width');
+      }catch(e){/* ignore */}
+      return chart;
+    }
+
+    drawSpark('spark1',[10,30,45,55,62,72],'#3b82f6');
+    drawSpark('spark2',[8,20,30,42,58,65],'#10b981');
+    drawSpark('spark3',[20,22,21,19,18,18],'#ef4444');
+    drawSpark('spark4',[0,0,1,1,2,2],'#f97316');
+
+    // Progress vs Plan Bar Chart
+    const progCtx = document.getElementById('progressBar').getContext('2d');
+    const progressChart = new Chart(progCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Test Design','Test Execution','UAT'],
+        datasets: [
+          {label:'Planned %',data:[95,85,80],backgroundColor:'rgba(99,102,241,0.9)'},
+          {label:'Actual %',data:[92,68,40],backgroundColor:'rgba(59,130,246,0.8)'}
+        ]
+      },
+      options: {
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom'}},
+        scales:{y:{beginAtZero:true,max:100}}
+      }
+    });
+    // remove any inline attributes Chart.js might set
+    try{ const pCan = document.getElementById('progressBar'); pCan.removeAttribute('height'); pCan.removeAttribute('width'); }catch(e){}
+
+    // Burndown Chart
+    const burndownCtx = document.getElementById('burndown').getContext('2d');
+    const burndownChart = new Chart(burndownCtx, {
+      type: 'line',
+      data: {
+        labels: ['Day 0','Day 3','Day 6','Day 9','Day 12','Day 15'],
+        datasets:[
+          {label:'Planned Remaining',data:[1000,800,600,400,200,0],borderColor:'rgba(99,102,241,0.9)',backgroundColor:'rgba(99,102,241,0.06)',tension:0.3,fill:true},
+          {label:'Actual Remaining',data:[1000,920,780,680,520,300],borderColor:'rgba(255,99,132,0.9)',backgroundColor:'rgba(255,99,132,0.06)',tension:0.3,fill:true}
+        ]
+      },
+      options:{
+        responsive:false,
+        maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom'}},
+        scales:{y:{beginAtZero:true}}
+      }
+    });
+    try{ const bCan = document.getElementById('burndown'); bCan.removeAttribute('height'); bCan.removeAttribute('width'); }catch(e){}
+  </script>
+</body>
+</html>

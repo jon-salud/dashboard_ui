@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chart Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #f0f0f0; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; }
+    .chart-container { 
+      width: 100%; 
+      height: 250px; 
+      margin-bottom: 20px;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Chart Height Test</h2>
+    <div class="chart-container">
+      <canvas id="testChart"></canvas>
+    </div>
+    <p>If this chart stays at 250px height, the fix works.</p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const ctx = document.getElementById('testChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['A', 'B', 'C'],
+        datasets: [{
+          label: 'Test',
+          data: [12, 19, 3],
+          backgroundColor: 'rgba(54, 162, 235, 0.5)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  </script>
+</body>
+</html>
