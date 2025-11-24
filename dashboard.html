@@ -92,6 +92,9 @@
     <div class="grid">
       <main class="main">
         <section class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h3 style="margin:0;font-size:15px">KPIs <button class="card-edit" data-target="kpis" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
+          </div>
           <div class="kpis">
             <div class="kpi">
               <div class="label">Test Cases Executed</div>
@@ -121,6 +124,9 @@
         </section>
 
         <section class="card charts">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h3 style="margin:0;font-size:15px">Charts <button class="card-edit" data-target="charts" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
+          </div>
           <div>
             <h3 style="margin:0 0 8px 0;font-size:15px">Progress vs Plan</h3>
             <div class="chart-wrapper"><canvas id="progressBar"></canvas></div>
@@ -166,9 +172,9 @@
 
       <aside class="aside">
         <div class="card">
-          <h3 style="margin:0 0 10px 0;font-size:15px">Blockers Drill-Down</h3>
-          <div style="padding:8px">
-            <ul style="list-style:none;margin:0;padding:0;">
+          <h3 style="margin:0 0 10px 0;font-size:15px">Blockers Drill-Down <button class="card-edit" data-target="blockers" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
+          <div style="padding:8px" id="blockersList">
+            <ul style="list-style:none;margin:0;padding:0;" id="blockersUl">
               <li style="margin-bottom:10px;display:flex;align-items:flex-start;gap:10px">
                 <span class="status critical" style="min-width:72px">Critical</span>
                 <div>
@@ -195,11 +201,11 @@
         </div>
 
         <div class="card">
-          <h3 style="margin:0 0 10px 0;font-size:15px">Quick Facts</h3>
-          <ul style="margin:0;padding-left:18px;color:var(--muted)">
-            <li>Active testers: <strong>12</strong></li>
-            <li>Avg execution/day: <strong>340</strong></li>
-            <li>Open critical defects: <strong>3</strong></li>
+          <h3 style="margin:0 0 10px 0;font-size:15px">Quick Facts <button class="card-edit" data-target="quickfacts" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
+          <ul style="margin:0;padding-left:18px;color:var(--muted)" id="quickFactsList">
+            <li>Active testers: <strong id="q-active">12</strong></li>
+            <li>Avg execution/day: <strong id="q-exec">340</strong></li>
+            <li>Open critical defects: <strong id="q-critical">3</strong></li>
           </ul>
         </div>
       </aside>
@@ -209,7 +215,7 @@
   </div>
 
   <!-- Edit Popover UI -->
-  <button id="editBtn" aria-label="Edit" style="position:fixed;right:18px;bottom:18px;background:var(--accent);color:white;border:none;border-radius:999px;padding:12px 14px;box-shadow:0 6px 18px rgba(59,130,246,0.25);cursor:pointer;z-index:999">Edit</button>
+  <button id="exportBtn" aria-label="Export" style="position:fixed;right:18px;bottom:18px;background:#111827;color:white;border:none;border-radius:999px;padding:12px 14px;box-shadow:0 6px 18px rgba(2,6,23,0.25);cursor:pointer;z-index:999">Export</button>
   <div id="editPopover" style="position:fixed;right:18px;bottom:72px;background:white;border:1px solid #e6edf6;border-radius:8px;padding:14px;box-shadow:0 12px 30px rgba(2,6,23,0.12);width:320px;display:none;z-index:999">
     <h4 style="margin:0 0 8px 0;font-size:15px">Edit Dashboard</h4>
     <form id="editForm" style="display:grid;gap:8px">
@@ -228,10 +234,20 @@
         <button type="button" id="cancelBtn" style="flex:1;padding:8px;background:#f3f6fb;color:#234;border-radius:6px;border:1px solid #e6edf6;cursor:pointer">Cancel</button>
       </div>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <button type="button" id="openModalBtn" style="flex:1;padding:8px;background:#fff;color:#234;border-radius:6px;border:1px solid #e6edf6;cursor:pointer">Open Editor</button>
-        <button type="button" id="exportQuickBtn" style="flex:1;padding:8px;background:#111827;color:#fff;border-radius:6px;border:none;cursor:pointer">Export Snapshot</button>
-      </div>
+          <button type="button" id="openModalBtn" style="flex:1;padding:8px;background:#fff;color:#234;border-radius:6px;border:1px solid #e6edf6;cursor:pointer">Open Editor</button>
+          <button type="button" id="exportQuickBtn" style="flex:1;padding:8px;background:#111827;color:#fff;border-radius:6px;border:none;cursor:pointer">Export Snapshot</button>
+        </div>
     </form>
+  </div>
+
+  <!-- Card edit popover -->
+  <div id="cardEditPopover" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:8px;padding:14px;box-shadow:0 12px 30px rgba(2,6,23,0.12);display:none;z-index:1001;width:420px;max-width:95%">
+    <h4 id="cardEditTitle" style="margin:0 0 8px 0">Edit</h4>
+    <div id="cardEditBody"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button id="cardSaveBtn" style="flex:1;padding:8px;background:var(--accent);color:#fff;border-radius:6px;border:none;cursor:pointer">Save</button>
+      <button id="cardCancelBtn" style="flex:1;padding:8px;background:#f3f6fb;color:#234;border-radius:6px;border:1px solid #e6edf6;cursor:pointer">Cancel</button>
+    </div>
   </div>
 
   <!-- Modal Editor -->
@@ -372,7 +388,10 @@
 
     function openPopover(){ pop.style.display='block'; }
     function closePopover(){ pop.style.display='none'; }
-    editBtn.addEventListener('click', ()=>{ pop.style.display = pop.style.display === 'block' ? 'none' : 'block'; });
+    if(editBtn){
+      editBtn.addEventListener('click', ()=>{ pop.style.display = pop.style.display === 'block' ? 'none' : 'block'; });
+      editBtn.addEventListener('click', populateForm);
+    }
     cancelBtn.addEventListener('click', closePopover);
 
     // populate form with current values
@@ -386,7 +405,6 @@
       editForm.m2.value = progressChart.data.datasets[1].data[1] || 0;
       editForm.m3.value = progressChart.data.datasets[1].data[2] || 0;
     }
-    editBtn.addEventListener('click', populateForm);
 
     saveBtn.addEventListener('click', ()=>{
       // KPIs
@@ -464,6 +482,13 @@
     // Persistence: save/load to localStorage
     const STORAGE_KEY = 'dashboard_demo_state_v1';
     function saveState(){
+      // collect blockers
+      const blockers = Array.from(document.querySelectorAll('#blockersUl li')).map(li=>({
+        status: li.querySelector('.status')?.textContent.trim() || '',
+        title: li.querySelector('div > div:first-child')?.textContent.trim() || '',
+        note: li.querySelector('div > div:last-child')?.textContent.trim() || ''
+      }));
+
       const state = {
         kpis: {
           executed: document.getElementById('kpi-executed').textContent.replace('%','')||0,
@@ -479,6 +504,12 @@
           labels: burndownChart.data.labels,
           planned: burndownChart.data.datasets[0].data,
           actual: burndownChart.data.datasets[1].data
+        },
+        blockers,
+        quickFacts: {
+          active: document.getElementById('q-active').textContent || '0',
+          exec: document.getElementById('q-exec').textContent || '0',
+          critical: document.getElementById('q-critical').textContent || '0'
         }
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -504,6 +535,21 @@
           burndownChart.data.datasets[0].data = state.burndown.planned || burndownChart.data.datasets[0].data;
           burndownChart.data.datasets[1].data = state.burndown.actual || burndownChart.data.datasets[1].data;
           burndownChart.update();
+        }
+        // restore blockers and quick facts if present
+        if(state.blockers){
+          const ul = document.getElementById('blockersUl'); ul.innerHTML = '';
+          state.blockers.forEach(b=>{
+            const li = document.createElement('li'); li.style.marginBottom='10px'; li.style.display='flex'; li.style.alignItems='flex-start'; li.style.gap='10px';
+            const span = document.createElement('span'); span.className = 'status ' + (b.status==='On Track'?'on':b.status==='Delayed'?'delayed':'critical'); span.style.minWidth='72px'; span.textContent = b.status;
+            const div = document.createElement('div'); div.innerHTML = `<div style="font-weight:600">${b.title}</div><div style="color:var(--muted);font-size:13px">${b.note}</div>`;
+            li.appendChild(span); li.appendChild(div); ul.appendChild(li);
+          });
+        }
+        if(state.quickFacts){
+          document.getElementById('q-active').textContent = state.quickFacts.active || '0';
+          document.getElementById('q-exec').textContent = state.quickFacts.exec || '0';
+          document.getElementById('q-critical').textContent = state.quickFacts.critical || '0';
         }
       }catch(e){console.warn('loadState error',e)}
     }
@@ -573,6 +619,10 @@
 
     modalExport.addEventListener('click', downloadSnapshot);
     exportQuickBtn.addEventListener('click', downloadSnapshot);
+
+    // Wire the floating export button to the enhanced snapshot exporter
+    const exportBtn = document.getElementById('exportBtn');
+    if(exportBtn){ exportBtn.addEventListener('click', downloadSnapshotEnhanced); }
 
     // CSV helpers
     function arrayToCsv(rows){ return rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n'); }
@@ -668,6 +718,128 @@
     modalExport.addEventListener('click', downloadSnapshotEnhanced);
     exportQuickBtn.removeEventListener('click', downloadSnapshot);
     exportQuickBtn.addEventListener('click', downloadSnapshotEnhanced);
+
+    // Card edit handlers (Blockers and Quick Facts)
+    (function(){
+      const cardEditButtons = document.querySelectorAll('.card-edit');
+      const cardPopover = document.getElementById('cardEditPopover');
+      const cardEditTitle = document.getElementById('cardEditTitle');
+      const cardEditBody = document.getElementById('cardEditBody');
+      const cardSaveBtn = document.getElementById('cardSaveBtn');
+      const cardCancelBtn = document.getElementById('cardCancelBtn');
+      let currentCard = null;
+
+      cardEditButtons.forEach(b=>b.addEventListener('click', (e)=>{
+        const target = e.currentTarget.getAttribute('data-target');
+        currentCard = target;
+        // Support quick per-card edit for KPIs and Charts by reusing existing UI
+        if(target === 'kpis'){
+          // open the small KPI popover and populate values
+          pop.style.display = 'block';
+          populateForm();
+          return;
+        }
+        if(target === 'charts'){
+          // open the detailed modal editor for charts
+          editorModal.style.display = 'flex';
+          populateModal();
+          return;
+        }
+        if(target==='blockers'){
+          cardEditTitle.textContent = 'Edit Blockers';
+          const items = Array.from(document.querySelectorAll('#blockersUl li')).map(li=>{
+            const status = li.querySelector('.status').textContent.trim();
+            const title = li.querySelector('div > div:first-child').textContent.trim();
+            const note = li.querySelector('div > div:last-child').textContent.trim();
+            return {status,title,note};
+          });
+          cardEditBody.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-weight:600">Blockers</div>
+              <button id="addBlockerBtn" type="button" style="padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Add Blocker</button>
+            </div>
+            <div id="blockerItems">
+              ${items.map((it,i)=>`
+                <div class="blocker-item" data-index="${i}" style="margin-bottom:8px;border-bottom:1px solid #f1f6fb;padding-bottom:6px">
+                  <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:600">Item ${i+1}</div><button class="removeBlockerBtn" type="button" style="border:none;background:transparent;color:var(--danger);cursor:pointer">Remove</button></div>
+                  <div style="display:flex;gap:8px;margin-top:6px">
+                    <select class="c-status"><option>On Track</option><option>Delayed</option><option>Critical</option></select>
+                    <input class="c-title" style="flex:1;padding:6px" value="${it.title}">
+                  </div>
+                  <div style="margin-top:6px"><textarea class="c-note" style="width:100%;height:56px;padding:6px">${it.note}</textarea></div>
+                </div>
+              `).join('')}
+            </div>
+            <div style="margin-top:10px;text-align:center">
+              <button id="addBlockerBottom" type="button" style="padding:8px 10px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Add Blocker</button>
+            </div>
+          `;
+          Array.from(cardEditBody.querySelectorAll('.c-status')).forEach((s,i)=>s.value = items[i].status);
+          // wire add/remove inside the popover
+          setTimeout(()=>{
+            const addBtn = document.getElementById('addBlockerBtn');
+            const addBottom = document.getElementById('addBlockerBottom');
+            const itemsWrap = document.getElementById('blockerItems');
+            function doAdd(defaultTitle='New blocker', defaultNote='Describe the blocker'){
+              const idx = itemsWrap.querySelectorAll('.blocker-item').length + 1;
+              const div = document.createElement('div');
+              div.className = 'blocker-item';
+              div.style.marginBottom = '8px'; div.style.borderBottom = '1px solid #f1f6fb'; div.style.paddingBottom = '6px';
+              div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:600">Item ${idx}</div><button class="removeBlockerBtn" type="button" style="border:none;background:transparent;color:var(--danger);cursor:pointer">Remove</button></div><div style="display:flex;gap:8px;margin-top:6px"><select class="c-status"><option>On Track</option><option>Delayed</option><option>Critical</option></select><input class="c-title" style="flex:1;padding:6px" value="${defaultTitle}"></div><div style="margin-top:6px"><textarea class="c-note" style="width:100%;height:56px;padding:6px">${defaultNote}</textarea></div>`;
+              itemsWrap.appendChild(div);
+              // attach remove handler
+              div.querySelector('.removeBlockerBtn').addEventListener('click', (ev)=>{ if(confirm('Remove this blocker?')){ div.remove(); reorderBlockerTitles(itemsWrap); } });
+            }
+            if(addBtn){ addBtn.addEventListener('click', ()=> doAdd()); }
+            if(addBottom){ addBottom.addEventListener('click', ()=> doAdd()); }
+            Array.from(cardEditBody.querySelectorAll('.removeBlockerBtn')).forEach(btn=>btn.addEventListener('click',(ev)=>{ if(confirm('Remove this blocker?')){ ev.currentTarget.closest('.blocker-item').remove(); reorderBlockerTitles(itemsWrap); } }));
+          },50);
+        }else if(target==='quickfacts'){
+          cardEditTitle.textContent = 'Edit Quick Facts';
+          const a = document.getElementById('q-active').textContent;
+          const ex = document.getElementById('q-exec').textContent;
+          const c = document.getElementById('q-critical').textContent;
+          cardEditBody.innerHTML = `
+            <label style="display:block;margin-bottom:8px">Active testers<input id="cf-active" type="number" value="${a}" style="width:100%;padding:6px"></label>
+            <label style="display:block;margin-bottom:8px">Avg execution/day<input id="cf-exec" type="number" value="${ex}" style="width:100%;padding:6px"></label>
+            <label style="display:block;margin-bottom:8px">Open critical defects<input id="cf-critical" type="number" value="${c}" style="width:100%;padding:6px"></label>
+          `;
+        }
+        cardPopover.style.display='block';
+      }));
+
+      cardCancelBtn.addEventListener('click', ()=>{ cardPopover.style.display='none'; currentCard=null; });
+      cardSaveBtn.addEventListener('click', ()=>{
+        if(currentCard==='blockers'){
+          const blocks = Array.from(cardEditBody.querySelectorAll('.blocker-item'));
+          const ul = document.getElementById('blockersUl'); ul.innerHTML='';
+          blocks.forEach(b=>{
+            const status = b.querySelector('.c-status').value;
+            const title = b.querySelector('.c-title').value;
+            const note = b.querySelector('.c-note').value;
+            const li = document.createElement('li'); li.style.marginBottom='10px'; li.style.display='flex'; li.style.gap='10px'; li.style.alignItems='flex-start';
+            const span = document.createElement('span'); span.className='status '+(status==='On Track'?'on':status==='Delayed'?'delayed':'critical'); span.style.minWidth='72px'; span.textContent = status;
+            const div = document.createElement('div'); div.innerHTML = `<div style="font-weight:600">${title}</div><div style="color:var(--muted);font-size:13px">${note}</div>`;
+            li.appendChild(span); li.appendChild(div); ul.appendChild(li);
+          });
+        }else if(currentCard==='quickfacts'){
+          document.getElementById('q-active').textContent = document.getElementById('cf-active').value;
+          document.getElementById('q-exec').textContent = document.getElementById('cf-exec').value;
+          document.getElementById('q-critical').textContent = document.getElementById('cf-critical').value;
+        }
+        cardPopover.style.display='none'; currentCard=null;
+        saveState();
+      });
+    })();
+
+    // helper to re-number item titles after add/remove inside popover
+    function reorderBlockerTitles(container){
+      const items = container.querySelectorAll('.blocker-item');
+      items.forEach((it,idx)=>{
+        const title = it.querySelector('div > div:first-child');
+        if(title) title.textContent = 'Item ' + (idx+1);
+      });
+    }
   </script>
 </body>
 </html>
