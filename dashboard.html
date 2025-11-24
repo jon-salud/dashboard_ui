@@ -223,10 +223,15 @@
   <!-- Export Button -->
   <button id="exportBtn" aria-label="Export" style="position:fixed;right:18px;bottom:18px;background:#111827;color:white;border:none;border-radius:999px;padding:12px 14px;box-shadow:0 6px 18px rgba(2,6,23,0.25);cursor:pointer;z-index:999">Export</button>
   <!-- keep modal editor triggers inside the editor modal UI -->
+  <!-- Global modal overlay (used by all modals/popovers) -->
+  <div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.35);z-index:1000"></div>
 
   <!-- Card edit popover -->
   <div id="cardEditPopover" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:8px;padding:14px;box-shadow:0 12px 30px rgba(2,6,23,0.12);display:none;z-index:1001;width:760px;max-width:95%;min-width:360px;">
-    <h4 id="cardEditTitle" style="margin:0 0 8px 0">Edit</h4>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h4 id="cardEditTitle" style="margin:0">Edit</h4>
+      <button id="cardCloseBtn" aria-label="Close" style="background:transparent;border:none;font-size:18px;cursor:pointer">✕</button>
+    </div>
     <div id="cardEditBody" style="max-height:60vh;overflow:auto"></div>
     <div style="display:flex;gap:8px;margin-top:10px">
       <button id="cardSaveBtn" style="flex:1;padding:8px;background:var(--accent);color:#fff;border-radius:6px;border:none;cursor:pointer">Save</button>
@@ -403,7 +408,7 @@
     // Popover behaviour
     // small popover removed — KPIs now edited via centered card popover
     
-    // Modal editor handlers
+    // Modal editor handlers + shared overlay/modal helpers
     const editorModal = document.getElementById('editorModal');
     const openModalBtn = document.getElementById('openModalBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
@@ -411,10 +416,27 @@
     const modalCancel = document.getElementById('modalCancel');
     const modalExport = document.getElementById('modalExport');
     const exportQuickBtn = document.getElementById('exportQuickBtn');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const cardCloseBtn = document.getElementById('cardCloseBtn');
 
-    if(openModalBtn) openModalBtn.addEventListener('click', ()=>{ editorModal.style.display='flex'; populateModal(); });
-    if(closeModalBtn) closeModalBtn.addEventListener('click', ()=>{ editorModal.style.display='none'; });
-    if(modalCancel) modalCancel.addEventListener('click', ()=>{ editorModal.style.display='none'; });
+    // helpers to disable page edit buttons while a modal is open
+    const pageEditButtons = Array.from(document.querySelectorAll('.card-edit'));
+    function setPageEditEnabled(enabled){ pageEditButtons.forEach(b=>{ b.disabled = !enabled; b.style.pointerEvents = enabled ? 'auto' : 'none'; b.style.opacity = enabled ? '1' : '0.5'; }); }
+
+    // common show/hide modal functions
+    function showModal(el){ if(!el) return; modalOverlay.style.display = 'block'; setPageEditEnabled(false); el.style.display = el===editorModal ? 'flex' : 'block'; }
+    function hideModal(el){ if(!el) return; el.style.display = 'none'; modalOverlay.style.display = 'none'; setPageEditEnabled(true); }
+
+    if(openModalBtn) openModalBtn.addEventListener('click', ()=>{ showModal(editorModal); populateModal(); });
+    if(closeModalBtn) closeModalBtn.addEventListener('click', ()=>{ hideModal(editorModal); });
+    if(modalCancel) modalCancel.addEventListener('click', ()=>{ hideModal(editorModal); });
+    if(cardCloseBtn) cardCloseBtn.addEventListener('click', ()=>{ hideModal(document.getElementById('cardEditPopover')); });
+    // clicking the overlay closes the active modal/popover
+    if(modalOverlay) modalOverlay.addEventListener('click', ()=>{
+      // find any open modal/popover and close
+      const pop = document.getElementById('cardEditPopover'); if(pop && pop.style.display!=='none'){ hideModal(pop); return; }
+      if(editorModal && editorModal.style.display!=='none'){ hideModal(editorModal); }
+    });
 
     // Add/remove burndown rows
     const addRowBtn = document.getElementById('addRowBtn');
@@ -729,7 +751,7 @@
       burndownChart.data.datasets[1].data = bd.actual;
       burndownChart.update();
 
-      editorModal.style.display = 'none';
+      hideModal(editorModal);
     });
 
     
@@ -864,8 +886,8 @@
         if(e.shiftKey){ if(document.activeElement === first){ e.preventDefault(); last.focus(); } }
         else { if(document.activeElement === last){ e.preventDefault(); first.focus(); } }
       }
-      function openCardPopover(){ lastFocusedElement = document.activeElement; cardPopover.style.display='block'; const firstFocusable = cardEditBody.querySelector('input,select,textarea,button'); if(firstFocusable) firstFocusable.focus(); document.addEventListener('keydown', trapKeydown); }
-      function closeCardPopover(){ cardPopover.style.display='none'; document.removeEventListener('keydown', trapKeydown); if(lastFocusedElement && lastFocusedElement.focus) lastFocusedElement.focus(); }
+      function openCardPopover(){ lastFocusedElement = document.activeElement; showModal(cardPopover); const firstFocusable = cardEditBody.querySelector('input,select,textarea,button'); if(firstFocusable) firstFocusable.focus(); document.addEventListener('keydown', trapKeydown); }
+      function closeCardPopover(){ hideModal(cardPopover); document.removeEventListener('keydown', trapKeydown); if(lastFocusedElement && lastFocusedElement.focus) lastFocusedElement.focus(); }
 
       cardEditButtons.forEach(b=>b.addEventListener('click', (e)=>{
         const target = e.currentTarget.getAttribute('data-target');
@@ -944,7 +966,7 @@
         }
         if(target === 'charts'){
           // open the detailed modal editor for charts
-          editorModal.style.display = 'flex';
+          showModal(editorModal);
           populateModal();
           return;
         }
