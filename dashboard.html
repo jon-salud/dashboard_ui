@@ -472,6 +472,10 @@
       const pop = document.getElementById('cardEditPopover'); if(pop && pop.style.display!=='none'){ hideModal(pop); return; }
       if(editorModal && editorModal.style.display!=='none'){ hideModal(editorModal); }
     });
+    // clicking the editorModal backdrop (not the content) also closes it
+    if(editorModal) editorModal.addEventListener('click', (e)=>{
+      if(e.target === editorModal){ hideModal(editorModal); }
+    });
 
     // Add/remove burndown rows
     const addRowBtn = document.getElementById('addRowBtn');
