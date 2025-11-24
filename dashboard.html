@@ -117,7 +117,7 @@
             <div class="kpi">
               <div class="label">Defects Open</div>
               <div class="value" id="kpi-defects">18</div>
-              <div class="delta">3 high priority</div>
+              <div class="delta" id="kpi-defects-high">3 high priority</div>
               <canvas class="spark" id="spark3"></canvas>
             </div>
             <div class="kpi">
@@ -588,16 +588,19 @@
           const paPercentTxt = document.getElementById('kpi-passed')?.textContent.replace('%','')||0;
           const paMatch = (document.getElementById('kpi-passed-count')?.textContent.match(/\((\d+)\s*\/\s*(\d+)\)/) || []);
           let paCount = Number(paMatch[1] || 0);
+          const exDeltaTxt = (document.getElementById('kpi-executed-delta')?.textContent || '').replace('%','') || 0;
+          const paDeltaTxt = (document.getElementById('kpi-passed-delta')?.textContent || '').replace('%','') || 0;
           // clamp invariants
           const safeExTotal = exTotal < 1 ? 1 : exTotal;
           const safeExCount = Math.max(0, Math.min(exCount, safeExTotal));
           paCount = Math.max(0, Math.min(paCount, safeExCount));
           const defects = Number(document.getElementById('kpi-defects')?.textContent || 0);
+          const highPriority = Number((document.getElementById('kpi-defects-high')?.textContent||'').replace(/[^0-9]/g,'') || 0);
           const delay = Number((document.getElementById('kpi-delay')?.textContent || '').toString().replace(' days','') || 0);
           return {
-            executed: { percent: Number(exPercentTxt), count: safeExCount, total: safeExTotal },
-            passed: { percent: Number(paPercentTxt), count: paCount, total: safeExCount },
-            defects, delay
+            executed: { percent: Number(exPercentTxt), count: safeExCount, total: safeExTotal, delta: Number(exDeltaTxt) },
+            passed: { percent: Number(paPercentTxt), count: paCount, total: safeExCount, delta: Number(paDeltaTxt) },
+            defects, highPriority, delay
           };
         })(),
         progress: {
@@ -635,6 +638,9 @@
             const elp = document.getElementById('kpi-passed-count'); if(elp) elp.textContent = `(${c2} / ${t2})`;
           } else { document.getElementById('kpi-passed').textContent = (state.kpis.passed||0) + '%'; }
           document.getElementById('kpi-defects').textContent = state.kpis.defects||0;
+          if(document.getElementById('kpi-defects-high')) document.getElementById('kpi-defects-high').textContent = (state.kpis.highPriority||0) + ' high priority';
+          if(document.getElementById('kpi-executed-delta')) document.getElementById('kpi-executed-delta').textContent = (state.kpis.executed?.delta>=0? '+'+state.kpis.executed.delta: state.kpis.executed?.delta) + '%';
+          if(document.getElementById('kpi-passed-delta')) document.getElementById('kpi-passed-delta').textContent = (state.kpis.passed?.delta>=0? '+'+state.kpis.passed.delta: state.kpis.passed?.delta) + '%';
           document.getElementById('kpi-delay').textContent = (state.kpis.delay||0) + ' days';
         }
         if(state.progress){
@@ -882,18 +888,28 @@
           const passed = document.getElementById('kpi-passed').textContent.replace('%','')||0;
           const defects = document.getElementById('kpi-defects').textContent||0;
           const delay = document.getElementById('kpi-delay').textContent.replace(' days','')||0;
+          const execDeltaText = (document.getElementById('kpi-executed-delta')?.textContent || '').replace('%','') || '0';
+          const passDeltaText = (document.getElementById('kpi-passed-delta')?.textContent || '').replace('%','') || '0';
+          const highPrioText = (document.getElementById('kpi-defects-high')?.textContent || '').replace(/[^0-9]/g,'') || '0';
           const m1 = progressChart.data.datasets[1].data[0] || 0;
           const m2 = progressChart.data.datasets[1].data[1] || 0;
           const m3 = progressChart.data.datasets[1].data[2] || 0;
-          // Only show executed count/total and passed count. Percentages auto-calc on save.
+          // Show two-column form with delta and high-priority fields
           cardEditBody.innerHTML = `
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
               <label style="display:block">Executed Count<input id="kpi_edit_executed_count" type="number" min="0" value="${executedCount}" style="width:100%;padding:6px"></label>
               <label style="display:block">Executed Total<input id="kpi_edit_executed_total" type="number" min="1" value="${executedTotal}" style="width:100%;padding:6px"></label>
             </div>
-            <label style="display:block;margin-bottom:8px">Passed Count<input id="kpi_edit_passed_count" type="number" min="0" value="${passedCount}" style="width:100%;padding:6px"></label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end;margin-bottom:8px">
+              <label style="display:block">Executed Δ (%)<input id="kpi_edit_executed_delta" type="number" step="1" value="${execDeltaText}" style="width:100%;padding:6px"></label>
+              <label style="display:block">Passed Δ (%)<input id="kpi_edit_passed_delta" type="number" step="1" value="${passDeltaText}" style="width:100%;padding:6px"></label>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end;margin-bottom:8px">
+              <label style="display:block">Passed Count<input id="kpi_edit_passed_count" type="number" min="0" value="${passedCount}" style="width:100%;padding:6px"></label>
+              <label style="display:block">High Priority<input id="kpi_edit_highprio" type="number" min="0" value="${highPrioText}" style="width:100%;padding:6px"></label>
+            </div>
             <div id="kpi_edit_validation" style="color:var(--danger);font-size:12px;margin-top:6px;display:none">Passed count should be less than or equal to Executed count.</div>
-            <label style="display:block;margin-bottom:8px">Defects Open<input id="kpi_edit_defects" type="number" min="0" value="${defects}" style="width:100%;padding:6px"></label>
+            <label style="display:block;margin-top:8px">Defects Open<input id="kpi_edit_defects" type="number" min="0" value="${defects}" style="width:100%;padding:6px"></label>
             <label style="display:block;margin-bottom:8px">Delay vs Plan (days)<input id="kpi_edit_delay" type="number" value="${delay}" style="width:100%;padding:6px"></label>
           `;
           // attach live validation handlers after rendering
@@ -901,6 +917,9 @@
             const inExCount = document.getElementById('kpi_edit_executed_count');
             const inExTotal = document.getElementById('kpi_edit_executed_total');
             const inPa = document.getElementById('kpi_edit_passed_count');
+            const inExDelta = document.getElementById('kpi_edit_executed_delta');
+            const inPaDelta = document.getElementById('kpi_edit_passed_delta');
+            const inHighPrio = document.getElementById('kpi_edit_highprio');
             const validationEl = document.getElementById('kpi_edit_validation');
             function validateKpiInputs(){
               const exCountV = Number(inExCount.value || 0);
@@ -914,7 +933,7 @@
               if(invalid){ validationEl.textContent = msg; validationEl.style.display = 'block'; cardSaveBtn.disabled = true; cardSaveBtn.style.opacity = '0.5'; }
               else { validationEl.style.display = 'none'; cardSaveBtn.disabled = false; cardSaveBtn.style.opacity = '1'; }
             }
-            [inExCount,inExTotal,inPa].forEach(inp=>{ if(inp) inp.addEventListener('input', validateKpiInputs); });
+            [inExCount,inExTotal,inPa,inExDelta,inPaDelta,inHighPrio].forEach(inp=>{ if(inp) inp.addEventListener('input', validateKpiInputs); });
             // run once to initialize
             validateKpiInputs();
           },50);
@@ -1027,6 +1046,9 @@
             let exCount = Number(document.getElementById('kpi_edit_executed_count')?.value || 0);
             let exTotal = Number(document.getElementById('kpi_edit_executed_total')?.value || 100);
             let paCount = Number(document.getElementById('kpi_edit_passed_count')?.value || 0);
+            const exDeltaIn = Number(document.getElementById('kpi_edit_executed_delta')?.value || 0);
+            const paDeltaIn = Number(document.getElementById('kpi_edit_passed_delta')?.value || 0);
+            const highPrio = Number(document.getElementById('kpi_edit_highprio')?.value || 0);
             const df = Number(document.getElementById('kpi_edit_defects')?.value || 0);
             const dl = Number(document.getElementById('kpi_edit_delay')?.value || 0);
             // sanitize and clamp values: executed cannot exceed total; passed cannot exceed executed
@@ -1043,7 +1065,11 @@
             document.getElementById('kpi-passed').textContent = paPercent + '%';
             document.getElementById('kpi-passed-count').textContent = `(${paCount} / ${exCount})`;
             document.getElementById('kpi-defects').textContent = df;
+            document.getElementById('kpi-defects-high').textContent = highPrio + ' high priority';
             document.getElementById('kpi-delay').textContent = dl + ' days';
+            // store deltas (displayed values for executed/passed delta)
+            document.getElementById('kpi-executed-delta').textContent = (exDeltaIn>=0? '+'+exDeltaIn: exDeltaIn) + '%';
+            document.getElementById('kpi-passed-delta').textContent = (paDeltaIn>=0? '+'+paDeltaIn: paDeltaIn) + '%';
             // apply milestone edits
             const m1v = Number(document.getElementById('kpi_edit_m1')?.value || 0);
             const m2v = Number(document.getElementById('kpi_edit_m2')?.value || 0);
