@@ -105,14 +105,14 @@
               <div class="counts" id="kpi-executed-count">(72 / 100)</div>
               <div class="value" id="kpi-executed">72%</div>
               <div class="delta" id="kpi-executed-delta">+6%</div>
-              <canvas class="spark" id="spark1"></canvas>
+              
             </div>
             <div class="kpi">
               <div class="label">Test Cases Passed</div>
               <div class="counts" id="kpi-passed-count">(65 / 100)</div>
               <div class="value" id="kpi-passed">65%</div>
               <div class="delta" id="kpi-passed-delta">+4%</div>
-              <canvas class="spark" id="spark2"></canvas>
+              
             </div>
             <div class="kpi">
               <div class="label">Defects Open</div>
@@ -124,7 +124,7 @@
               <div class="label">Delay vs Plan</div>
               <div class="value" id="kpi-delay">2 days</div>
               <div class="delta">Since last milestone</div>
-              <canvas class="spark" id="spark4"></canvas>
+              
             </div>
           </div>
         </section>
@@ -335,10 +335,10 @@
       return chart;
     }
 
-    drawSpark('spark1',[10,30,45,55,62,72],'#3b82f6');
-    drawSpark('spark2',[8,20,30,42,58,65],'#10b981');
+    if(document.getElementById('spark1')) drawSpark('spark1',[10,30,45,55,62,72],'#3b82f6');
+    if(document.getElementById('spark2')) drawSpark('spark2',[8,20,30,42,58,65],'#10b981');
     // spark3 removed to save space for KPI card
-    drawSpark('spark4',[0,0,1,1,2,2],'#f97316');
+    if(document.getElementById('spark4')) drawSpark('spark4',[0,0,1,1,2,2],'#f97316');
 
     // Progress vs Plan Bar Chart
     const progCtx = document.getElementById('progressBar').getContext('2d');
