@@ -646,10 +646,8 @@
       const today = new Date().toISOString().slice(0,10);
       a.href = url; a.download = `dashboard_snapshot_${today}.html`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }
-    modalExport.removeEventListener('click', downloadSnapshot);
-    modalExport.addEventListener('click', downloadSnapshotEnhanced);
-    exportQuickBtn.removeEventListener('click', downloadSnapshot);
-    exportQuickBtn.addEventListener('click', downloadSnapshotEnhanced);
+    if(modalExport){ modalExport.removeEventListener('click', downloadSnapshot); modalExport.addEventListener('click', downloadSnapshotEnhanced); }
+    if(exportQuickBtn){ exportQuickBtn.removeEventListener('click', downloadSnapshot); exportQuickBtn.addEventListener('click', downloadSnapshotEnhanced); }
 
     // Card edit handlers (Blockers and Quick Facts)
     (function(){
