@@ -369,12 +369,13 @@
     const modalExport = document.getElementById('modalExport');
     const exportQuickBtn = document.getElementById('exportQuickBtn');
 
-    openModalBtn.addEventListener('click', ()=>{ editorModal.style.display='flex'; populateModal(); });
-    closeModalBtn.addEventListener('click', ()=>{ editorModal.style.display='none'; });
-    modalCancel.addEventListener('click', ()=>{ editorModal.style.display='none'; });
+    if(openModalBtn) openModalBtn.addEventListener('click', ()=>{ editorModal.style.display='flex'; populateModal(); });
+    if(closeModalBtn) closeModalBtn.addEventListener('click', ()=>{ editorModal.style.display='none'; });
+    if(modalCancel) modalCancel.addEventListener('click', ()=>{ editorModal.style.display='none'; });
 
     // Add/remove burndown rows
-    document.getElementById('addRowBtn').addEventListener('click', ()=>{
+    const addRowBtn = document.getElementById('addRowBtn');
+    if(addRowBtn) addRowBtn.addEventListener('click', ()=>{
       const tbody = document.querySelector('#burndownTable tbody');
       const tr = document.createElement('tr');
       tr.innerHTML = `<td><input class="b-date" type="date" value="" style="width:160px"></td><td><input class="b-planned" type="number" value="0" style="width:120px"></td><td><input class="b-actual" type="number" value="0" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
@@ -549,8 +550,8 @@
       a.href = url; a.download = `dashboard_snapshot_${today}.html`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }
 
-    modalExport.addEventListener('click', downloadSnapshot);
-    exportQuickBtn.addEventListener('click', downloadSnapshot);
+    if(modalExport) modalExport.addEventListener('click', downloadSnapshot);
+    if(exportQuickBtn) exportQuickBtn.addEventListener('click', downloadSnapshot);
 
     // Wire the floating export button to the enhanced snapshot exporter
     const exportBtn = document.getElementById('exportBtn');
