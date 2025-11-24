@@ -102,14 +102,16 @@
           <div class="kpis">
             <div class="kpi">
               <div class="label">Test Cases Executed</div>
+              <div class="counts" id="kpi-executed-count">(72 / 100)</div>
               <div class="value" id="kpi-executed">72%</div>
-              <div class="delta">+6% vs yesterday</div>
+              <div class="delta" id="kpi-executed-delta">+6% vs yesterday</div>
               <canvas class="spark" id="spark1"></canvas>
             </div>
             <div class="kpi">
               <div class="label">Test Cases Passed</div>
+              <div class="counts" id="kpi-passed-count">(65 / 100)</div>
               <div class="value" id="kpi-passed">65%</div>
-              <div class="delta">+4% vs yesterday</div>
+              <div class="delta" id="kpi-passed-delta">+4% vs yesterday</div>
               <canvas class="spark" id="spark2"></canvas>
             </div>
             <div class="kpi">
@@ -577,12 +579,27 @@
       }));
 
       const state = {
-        kpis: {
-          executed: document.getElementById('kpi-executed').textContent.replace('%','')||0,
-          passed: document.getElementById('kpi-passed').textContent.replace('%','')||0,
-          defects: document.getElementById('kpi-defects').textContent||0,
-          delay: document.getElementById('kpi-delay').textContent.replace(' days','')||0
-        },
+        kpis: (function(){
+          // read displayed KPI values and coerce to safe numeric shape
+          const exPercentTxt = document.getElementById('kpi-executed')?.textContent.replace('%','')||0;
+          const exMatch = (document.getElementById('kpi-executed-count')?.textContent.match(/\((\d+)\s*\/\s*(\d+)\)/) || []);
+          const exCount = Number(exMatch[1] || 0);
+          const exTotal = Number(exMatch[2] || 100) || 100;
+          const paPercentTxt = document.getElementById('kpi-passed')?.textContent.replace('%','')||0;
+          const paMatch = (document.getElementById('kpi-passed-count')?.textContent.match(/\((\d+)\s*\/\s*(\d+)\)/) || []);
+          let paCount = Number(paMatch[1] || 0);
+          // clamp invariants
+          const safeExTotal = exTotal < 1 ? 1 : exTotal;
+          const safeExCount = Math.max(0, Math.min(exCount, safeExTotal));
+          paCount = Math.max(0, Math.min(paCount, safeExCount));
+          const defects = Number(document.getElementById('kpi-defects')?.textContent || 0);
+          const delay = Number((document.getElementById('kpi-delay')?.textContent || '').toString().replace(' days','') || 0);
+          return {
+            executed: { percent: Number(exPercentTxt), count: safeExCount, total: safeExTotal },
+            passed: { percent: Number(paPercentTxt), count: paCount, total: safeExCount },
+            defects, delay
+          };
+        })(),
         progress: {
           planned: progressChart.data.datasets[0].data,
           actual: progressChart.data.datasets[1].data
@@ -607,8 +624,16 @@
         const raw = localStorage.getItem(STORAGE_KEY); if(!raw) return;
         const state = JSON.parse(raw);
         if(state.kpis){
-          document.getElementById('kpi-executed').textContent = (state.kpis.executed||0) + '%';
-          document.getElementById('kpi-passed').textContent = (state.kpis.passed||0) + '%';
+          if(typeof state.kpis.executed === 'object'){
+            document.getElementById('kpi-executed').textContent = (state.kpis.executed.percent||0) + '%';
+            const c = state.kpis.executed.count || 0; const t = state.kpis.executed.total || 100;
+            const elc = document.getElementById('kpi-executed-count'); if(elc) elc.textContent = `(${c} / ${t})`;
+          } else { document.getElementById('kpi-executed').textContent = (state.kpis.executed||0) + '%'; }
+          if(typeof state.kpis.passed === 'object'){
+            document.getElementById('kpi-passed').textContent = (state.kpis.passed.percent||0) + '%';
+            const c2 = state.kpis.passed.count || 0; const t2 = state.kpis.passed.total || (state.kpis.executed?.count || 0) || 100;
+            const elp = document.getElementById('kpi-passed-count'); if(elp) elp.textContent = `(${c2} / ${t2})`;
+          } else { document.getElementById('kpi-passed').textContent = (state.kpis.passed||0) + '%'; }
           document.getElementById('kpi-defects').textContent = state.kpis.defects||0;
           document.getElementById('kpi-delay').textContent = (state.kpis.delay||0) + ' days';
         }
@@ -844,19 +869,55 @@
           // open the centered card edit popover for KPIs (with milestones)
           currentCard = 'kpis';
           cardEditTitle.textContent = 'Edit KPIs & Milestones';
+          // parse counts if present
+          const execCountText = document.getElementById('kpi-executed-count')?.textContent || '(72 / 100)';
+          const execMatch = execCountText.match(/\((\d+)\s*\/\s*(\d+)\)/);
+          const executedCount = execMatch ? execMatch[1] : '72';
+          const executedTotal = execMatch ? execMatch[2] : '100';
           const executed = document.getElementById('kpi-executed').textContent.replace('%','')||0;
+          const passCountText = document.getElementById('kpi-passed-count')?.textContent || '(65 / 100)';
+          const passMatch = passCountText.match(/\((\d+)\s*\/\s*(\d+)\)/);
+          const passedCount = passMatch ? passMatch[1] : '65';
+          const passedTotal = passMatch ? passMatch[2] : '100';
           const passed = document.getElementById('kpi-passed').textContent.replace('%','')||0;
           const defects = document.getElementById('kpi-defects').textContent||0;
           const delay = document.getElementById('kpi-delay').textContent.replace(' days','')||0;
           const m1 = progressChart.data.datasets[1].data[0] || 0;
           const m2 = progressChart.data.datasets[1].data[1] || 0;
           const m3 = progressChart.data.datasets[1].data[2] || 0;
+          // Only show executed count/total and passed count. Percentages auto-calc on save.
           cardEditBody.innerHTML = `
-            <label style="display:block;margin-bottom:8px">Test Cases Executed (%)<input id="kpi_edit_executed" type="number" min="0" max="100" value="${executed}" style="width:100%;padding:6px"></label>
-            <label style="display:block;margin-bottom:8px">Test Cases Passed (%)<input id="kpi_edit_passed" type="number" min="0" max="100" value="${passed}" style="width:100%;padding:6px"></label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <label style="display:block">Executed Count<input id="kpi_edit_executed_count" type="number" min="0" value="${executedCount}" style="width:100%;padding:6px"></label>
+              <label style="display:block">Executed Total<input id="kpi_edit_executed_total" type="number" min="1" value="${executedTotal}" style="width:100%;padding:6px"></label>
+            </div>
+            <label style="display:block;margin-bottom:8px">Passed Count<input id="kpi_edit_passed_count" type="number" min="0" value="${passedCount}" style="width:100%;padding:6px"></label>
+            <div id="kpi_edit_validation" style="color:var(--danger);font-size:12px;margin-top:6px;display:none">Passed count should be less than or equal to Executed count.</div>
             <label style="display:block;margin-bottom:8px">Defects Open<input id="kpi_edit_defects" type="number" min="0" value="${defects}" style="width:100%;padding:6px"></label>
             <label style="display:block;margin-bottom:8px">Delay vs Plan (days)<input id="kpi_edit_delay" type="number" value="${delay}" style="width:100%;padding:6px"></label>
           `;
+          // attach live validation handlers after rendering
+          setTimeout(()=>{
+            const inExCount = document.getElementById('kpi_edit_executed_count');
+            const inExTotal = document.getElementById('kpi_edit_executed_total');
+            const inPa = document.getElementById('kpi_edit_passed_count');
+            const validationEl = document.getElementById('kpi_edit_validation');
+            function validateKpiInputs(){
+              const exCountV = Number(inExCount.value || 0);
+              const exTotalV = Number(inExTotal.value || 0) || 0;
+              const paV = Number(inPa.value || 0);
+              let msg = '';
+              let invalid = false;
+              if(exTotalV < 1){ msg = 'Executed Total must be at least 1.'; invalid = true; }
+              else if(exCountV > exTotalV){ msg = 'Executed count cannot be greater than Executed total.'; invalid = true; }
+              else if(paV > exCountV){ msg = 'Passed count should be less than or equal to Executed count.'; invalid = true; }
+              if(invalid){ validationEl.textContent = msg; validationEl.style.display = 'block'; cardSaveBtn.disabled = true; cardSaveBtn.style.opacity = '0.5'; }
+              else { validationEl.style.display = 'none'; cardSaveBtn.disabled = false; cardSaveBtn.style.opacity = '1'; }
+            }
+            [inExCount,inExTotal,inPa].forEach(inp=>{ if(inp) inp.addEventListener('input', validateKpiInputs); });
+            // run once to initialize
+            validateKpiInputs();
+          },50);
           openCardPopover();
           return;
         }
@@ -962,13 +1023,25 @@
           document.getElementById('q-exec').textContent = document.getElementById('cf-exec').value;
           document.getElementById('q-critical').textContent = document.getElementById('cf-critical').value;
           }else if(currentCard==='kpis'){
-            // read KPI edits from card popover
-            const ex = document.getElementById('kpi_edit_executed')?.value || 0;
-            const pa = document.getElementById('kpi_edit_passed')?.value || 0;
-            const df = document.getElementById('kpi_edit_defects')?.value || 0;
-            const dl = document.getElementById('kpi_edit_delay')?.value || 0;
-            document.getElementById('kpi-executed').textContent = ex + '%';
-            document.getElementById('kpi-passed').textContent = pa + '%';
+            // read KPI edits from card popover (counts + percentages)
+            let exCount = Number(document.getElementById('kpi_edit_executed_count')?.value || 0);
+            let exTotal = Number(document.getElementById('kpi_edit_executed_total')?.value || 100);
+            let paCount = Number(document.getElementById('kpi_edit_passed_count')?.value || 0);
+            const df = Number(document.getElementById('kpi_edit_defects')?.value || 0);
+            const dl = Number(document.getElementById('kpi_edit_delay')?.value || 0);
+            // sanitize and clamp values: executed cannot exceed total; passed cannot exceed executed
+            if(exTotal < 1) exTotal = 1;
+            if(exCount < 0) exCount = 0;
+            if(exCount > exTotal) exCount = exTotal;
+            if(paCount < 0) paCount = 0;
+            if(paCount > exCount) paCount = exCount;
+            // compute percent values
+            const exPercent = exTotal>0 ? Math.round((exCount / exTotal) * 100) : 0;
+            const paPercent = exCount>0 ? Math.round((paCount / exCount) * 100) : 0;
+            document.getElementById('kpi-executed').textContent = exPercent + '%';
+            document.getElementById('kpi-executed-count').textContent = `(${exCount} / ${exTotal})`;
+            document.getElementById('kpi-passed').textContent = paPercent + '%';
+            document.getElementById('kpi-passed-count').textContent = `(${paCount} / ${exCount})`;
             document.getElementById('kpi-defects').textContent = df;
             document.getElementById('kpi-delay').textContent = dl + ' days';
             // apply milestone edits
