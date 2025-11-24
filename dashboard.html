@@ -934,19 +934,34 @@
       }
       const fontStyle = `<style>${inlinedCss}</style>`;
       
-      // Fetch and inline logo.svg
-      const logoSvg = await fetch('logo.svg').then(r => r.text()).catch(() => '');
+      // Inline logo.svg content
+      const logoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <rect x="4" y="4" width="40" height="40" rx="6" fill="#3b82f6">
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="10" y="10" width="10" height="10" rx="2" fill="#fff" opacity="0.9">
+    <animate attributeName="opacity" values="0.6;0.9;0.6" dur="2s" begin="0s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="24" y="10" width="10" height="10" rx="2" fill="#fff" opacity="0.9">
+    <animate attributeName="opacity" values="0.6;0.9;0.6" dur="2s" begin="0.3s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="10" y="24" width="10" height="10" rx="2" fill="#fff" opacity="0.9">
+    <animate attributeName="opacity" values="0.6;0.9;0.6" dur="2s" begin="0.6s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="24" y="24" width="10" height="10" rx="2" fill="#fff" opacity="0.6">
+    <animate attributeName="opacity" values="0.3;0.6;0.3" dur="2s" begin="0.9s" repeatCount="indefinite"/>
+  </rect>
+</svg>`;
       
-      // Fetch and inline favicon.svg as base64
-      const faviconBlob = await fetch('favicon.svg').then(r => r.blob()).catch(() => null);
-      let faviconDataUri = '';
-      if (faviconBlob) {
-        const reader = new FileReader();
-        faviconDataUri = await new Promise((resolve) => {
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(faviconBlob);
-        });
-      }
+      // Inline favicon.svg as base64
+      const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#3b82f6"/>
+  <rect x="6" y="6" width="8" height="8" rx="1.5" fill="#fff" opacity="0.9"/>
+  <rect x="18" y="6" width="8" height="8" rx="1.5" fill="#fff" opacity="0.9"/>
+  <rect x="6" y="18" width="8" height="8" rx="1.5" fill="#fff" opacity="0.9"/>
+  <rect x="18" y="18" width="8" height="8" rx="1.5" fill="#fff" opacity="0.6"/>
+</svg>`;
+      const faviconDataUri = 'data:image/svg+xml;base64,' + btoa(faviconSvg);
       
       // generate snapshot HTML string
       const docClone = document.documentElement.cloneNode(true);
@@ -957,19 +972,20 @@
       
       // Replace logo.svg reference with inline SVG
       const logoImg = docClone.querySelector('img[src="logo.svg"]');
-      if (logoImg && logoSvg) {
+      if (logoImg) {
         const parser = new DOMParser();
         const svgDoc = parser.parseFromString(logoSvg, 'image/svg+xml');
         const svgEl = svgDoc.documentElement;
         // Preserve the class and style from img
         if (logoImg.className) svgEl.setAttribute('class', logoImg.className);
         if (logoImg.getAttribute('style')) svgEl.setAttribute('style', logoImg.getAttribute('style'));
+        if (logoImg.getAttribute('alt')) svgEl.setAttribute('aria-label', logoImg.getAttribute('alt'));
         logoImg.parentElement.replaceChild(docClone.importNode(svgEl, true), logoImg);
       }
       
       // Replace favicon link with data URI
       const faviconLink = docClone.querySelector('link[rel="icon"]');
-      if (faviconLink && faviconDataUri) {
+      if (faviconLink) {
         faviconLink.setAttribute('href', faviconDataUri);
       }
       
