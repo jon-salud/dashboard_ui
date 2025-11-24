@@ -495,8 +495,7 @@
     const origBurndownUpdate = burndownChart.update.bind(burndownChart);
     burndownChart.update = function(){ origBurndownUpdate(); saveState(); };
 
-    // Also save when KPI values change via the popover save
-    const origSaveClick = saveBtn.onclick;
+    // Also save when KPI values change via the popover save (no small popover exists now)
 
 
     modalSave.addEventListener('click', ()=>{
