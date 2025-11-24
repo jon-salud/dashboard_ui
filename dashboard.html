@@ -933,9 +933,46 @@
         }catch(e){console.warn('font inline failed',e)}
       }
       const fontStyle = `<style>${inlinedCss}</style>`;
+      
+      // Fetch and inline logo.svg
+      const logoSvg = await fetch('logo.svg').then(r => r.text()).catch(() => '');
+      
+      // Fetch and inline favicon.svg as base64
+      const faviconBlob = await fetch('favicon.svg').then(r => r.blob()).catch(() => null);
+      let faviconDataUri = '';
+      if (faviconBlob) {
+        const reader = new FileReader();
+        faviconDataUri = await new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(faviconBlob);
+        });
+      }
+      
       // generate snapshot HTML string
       const docClone = document.documentElement.cloneNode(true);
-      ['#editBtn','#editPopover','#editorModal','#progressCsvInput','#burndownCsvInput'].forEach(sel=>{ const el = docClone.querySelector(sel); if(el) el.remove(); });
+      
+      // Remove all edit buttons and controls
+      ['#editBtn','#editPopover','#editorModal','#progressCsvInput','#burndownCsvInput','#exportBtn'].forEach(sel=>{ const el = docClone.querySelector(sel); if(el) el.remove(); });
+      docClone.querySelectorAll('.card-edit').forEach(btn => btn.remove());
+      
+      // Replace logo.svg reference with inline SVG
+      const logoImg = docClone.querySelector('img[src="logo.svg"]');
+      if (logoImg && logoSvg) {
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(logoSvg, 'image/svg+xml');
+        const svgEl = svgDoc.documentElement;
+        // Preserve the class and style from img
+        if (logoImg.className) svgEl.setAttribute('class', logoImg.className);
+        if (logoImg.getAttribute('style')) svgEl.setAttribute('style', logoImg.getAttribute('style'));
+        logoImg.parentElement.replaceChild(docClone.importNode(svgEl, true), logoImg);
+      }
+      
+      // Replace favicon link with data URI
+      const faviconLink = docClone.querySelector('link[rel="icon"]');
+      if (faviconLink && faviconDataUri) {
+        faviconLink.setAttribute('href', faviconDataUri);
+      }
+      
       // convert canvases to images (use originals from live DOM)
       const canvases = Array.from(document.querySelectorAll('canvas'));
       canvases.forEach((c)=>{
