@@ -100,7 +100,7 @@
       <main class="main">
         <section class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <h3 style="margin:0;font-size:15px">KPIs <button class="card-edit" data-target="kpis" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
+            <h3 style="margin:0;font-size:15px">KPIs <button type="button" class="card-edit" data-target="kpis" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
           </div>
           <div class="kpis">
             <div class="kpi">
@@ -134,7 +134,7 @@
 
         <section class="card charts">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;grid-column:1 / -1">
-            <h3 style="margin:0;font-size:15px">Charts <button class="card-edit" data-target="charts" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
+            <h3 style="margin:0;font-size:15px">Charts <button type="button" id="chartsEditBtn" class="card-edit" data-target="charts" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
           </div>
           <div>
             <h3 style="margin:0 0 8px 0;font-size:15px">Progress vs Plan</h3>
@@ -148,7 +148,7 @@
         </section>
 
         <section class="card">
-          <h3 style="margin:0 0 12px 0;font-size:15px">Milestone Heatmap <button class="card-edit" data-target="milestones" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button>
+          <h3 style="margin:0 0 12px 0;font-size:15px">Milestone Heatmap <button type="button" class="card-edit" data-target="milestones" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button>
             <button id="milestoneExportCsv" style="margin-left:8px;padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer;font-size:13px">Export CSV</button>
             <button id="milestoneImportCsv" style="margin-left:6px;padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer;font-size:13px">Import CSV</button>
             <input type="file" id="milestoneCsvInput" accept="text/csv" style="display:none">
@@ -185,7 +185,7 @@
 
       <aside class="aside">
         <div class="card">
-          <h3 style="margin:0 0 10px 0;font-size:15px">Blockers Drill-Down <button class="card-edit" data-target="blockers" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
+          <h3 style="margin:0 0 10px 0;font-size:15px">Blockers Drill-Down <button type="button" class="card-edit" data-target="blockers" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
           <div style="padding:8px" id="blockersList">
             <ul style="list-style:none;margin:0;padding:0;" id="blockersUl">
               <li style="margin-bottom:10px;display:flex;align-items:flex-start;gap:10px">
@@ -214,7 +214,7 @@
         </div>
 
         <div class="card">
-          <h3 style="margin:0 0 10px 0;font-size:15px">Quick Facts <button class="card-edit" data-target="quickfacts" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
+          <h3 style="margin:0 0 10px 0;font-size:15px">Quick Facts <button type="button" class="card-edit" data-target="quickfacts" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
           <ul style="margin:0;padding-left:18px;color:var(--muted)" id="quickFactsList">
             <li>Active testers: <strong id="q-active">12</strong></li>
             <li>Avg execution/day: <strong id="q-exec">340</strong></li>
@@ -247,7 +247,7 @@
   </div>
 
   <!-- Modal Editor -->
-  <div id="editorModal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:1000;padding:20px">
+  <div id="editorModal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:1001;padding:20px">
     <div class="modal-anim" style="background:#fff;border-radius:10px;max-width:900px;width:100%;max-height:90vh;overflow:auto;padding:16px;transform:scale(.98);opacity:0;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <h3 style="margin:0">Detailed Editor</h3>
@@ -426,6 +426,8 @@
     const modalOverlay = document.getElementById('modalOverlay');
     const cardCloseBtn = document.getElementById('cardCloseBtn');
 
+    // debug helpers removed
+
     // helpers to disable page edit buttons while a modal is open
     const pageEditButtons = Array.from(document.querySelectorAll('.card-edit'));
     function setPageEditEnabled(enabled){ pageEditButtons.forEach(b=>{ b.disabled = !enabled; b.style.pointerEvents = enabled ? 'auto' : 'none'; b.style.opacity = enabled ? '1' : '0.5'; }); }
@@ -447,6 +449,18 @@
     }
     // Global Escape handling to close active modal/popover
     document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape'){ const pop = document.getElementById('cardEditPopover'); if(pop && pop.style.display!=='none'){ hideModal(pop); } else if(editorModal && editorModal.style.display!=='none'){ hideModal(editorModal); } } });
+
+    // Defensive recovery: if overlay was left visible (e.g., interrupted animation), clear it and re-enable buttons
+    setTimeout(()=>{
+      try{
+        if(modalOverlay && modalOverlay.style.display === 'block' && (modalOverlay.style.opacity === '' || modalOverlay.style.opacity === '0')){
+          modalOverlay.style.display = 'none'; modalOverlay.style.opacity = '0';
+          const pop = document.getElementById('cardEditPopover'); if(pop) pop.style.display = 'none';
+          if(editorModal) editorModal.style.display = 'none';
+          setPageEditEnabled(true);
+        }
+      }catch(e){}
+    }, 60);
 
     if(openModalBtn) openModalBtn.addEventListener('click', ()=>{ showModal(editorModal); populateModal(); });
     if(closeModalBtn) closeModalBtn.addEventListener('click', ()=>{ hideModal(editorModal); });
@@ -1132,14 +1146,7 @@
         }
         openCardPopover();
       }));
-      // Fallback: ensure the Charts edit button always opens the modal
-      const chartsCardBtn = document.querySelector('.card-edit[data-target="charts"]');
-      if(chartsCardBtn){ chartsCardBtn.addEventListener('click', (e)=>{ e.stopPropagation(); showModal(editorModal); populateModal(); }); }
-      // Delegated listener (robust): catch clicks that might not reach the button directly
-      document.addEventListener('click', (e)=>{
-        const b = e.target.closest && e.target.closest('.card-edit[data-target="charts"]');
-        if(b){ try{ console.log('Charts edit button clicked'); }catch(e){} e.preventDefault(); e.stopPropagation(); showModal(editorModal); populateModal(); }
-      });
+      // (Charts edit button now uses the unified cardEditButtons.forEach handler above)
       cardCancelBtn.addEventListener('click', ()=>{ closeCardPopover(); currentCard=null; });
       cardSaveBtn.addEventListener('click', ()=>{
         if(currentCard==='blockers'){
