@@ -980,7 +980,8 @@
         if (logoImg.className) svgEl.setAttribute('class', logoImg.className);
         if (logoImg.getAttribute('style')) svgEl.setAttribute('style', logoImg.getAttribute('style'));
         if (logoImg.getAttribute('alt')) svgEl.setAttribute('aria-label', logoImg.getAttribute('alt'));
-        logoImg.parentElement.replaceChild(docClone.importNode(svgEl, true), logoImg);
+        const importedSvg = document.importNode(svgEl, true);
+        logoImg.parentElement.replaceChild(importedSvg, logoImg);
       }
       
       // Replace favicon link with data URI
