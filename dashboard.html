@@ -88,13 +88,24 @@
     /* modal animations */
     #modalOverlay{opacity:0;transition:opacity .18s ease;}
     .modal-anim{transition:transform .18s ease, opacity .18s ease}
+    
+    /* logo bounce animation */
+    @keyframes logoBounce {
+      0% { transform: scale(1.5); opacity: 0; }
+      50% { transform: scale(0.9); opacity: 1; }
+      70% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    .logo-bounce {
+      animation: logoBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <div style="display:flex;align-items:center;gap:16px">
-        <img src="logo.svg" alt="Dashboard" style="height:48px">
+        <img src="logo.svg" alt="Dashboard" class="logo-bounce" style="height:48px">
         <div>
           <h1 style="margin:0;font-size:28px;font-weight:700;line-height:1.2">On The Same Page</h1>
           <p style="margin:4px 0 0 0;font-size:14px;color:var(--muted);font-weight:400">Real-time visibility. Shared accountability. One source of truth.</p>
