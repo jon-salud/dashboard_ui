@@ -139,7 +139,7 @@
         </section>
 
         <section class="card">
-          <h3 style="margin:0 0 12px 0;font-size:15px">Milestone Heatmap</h3>
+          <h3 style="margin:0 0 12px 0;font-size:15px">Milestone Heatmap <button class="card-edit" data-target="milestones" style="margin-left:8px;vertical-align:middle;border:0;background:transparent;cursor:pointer;color:var(--muted)">✎</button></h3>
           <div style="overflow:auto">
             <table>
               <thead>
@@ -694,10 +694,6 @@
             <label style="display:block;margin-bottom:8px">Test Cases Passed (%)<input id="kpi_edit_passed" type="number" min="0" max="100" value="${passed}" style="width:100%;padding:6px"></label>
             <label style="display:block;margin-bottom:8px">Defects Open<input id="kpi_edit_defects" type="number" min="0" value="${defects}" style="width:100%;padding:6px"></label>
             <label style="display:block;margin-bottom:8px">Delay vs Plan (days)<input id="kpi_edit_delay" type="number" value="${delay}" style="width:100%;padding:6px"></label>
-            <hr style="border:none;border-top:1px solid #eef3fb;margin:8px 0">
-            <label style="display:block;margin-bottom:8px">Test Design %<input id="kpi_edit_m1" type="number" min="0" max="100" value="${m1}" style="width:100%;padding:6px"></label>
-            <label style="display:block;margin-bottom:8px">Test Execution %<input id="kpi_edit_m2" type="number" min="0" max="100" value="${m2}" style="width:100%;padding:6px"></label>
-            <label style="display:block;margin-bottom:8px">UAT %<input id="kpi_edit_m3" type="number" min="0" max="100" value="${m3}" style="width:100%;padding:6px"></label>
           `;
           openCardPopover();
           return;
@@ -706,6 +702,21 @@
           // open the detailed modal editor for charts
           editorModal.style.display = 'flex';
           populateModal();
+          return;
+        }
+        if(target === 'milestones'){
+          // open centered popover for milestones only
+          currentCard = 'milestones';
+          cardEditTitle.textContent = 'Edit Milestones';
+          const a1 = progressChart.data.datasets[1].data[0] || 0;
+          const a2 = progressChart.data.datasets[1].data[1] || 0;
+          const a3 = progressChart.data.datasets[1].data[2] || 0;
+          cardEditBody.innerHTML = `
+            <label style="display:block;margin-bottom:8px">Test Design %<input id="milestone_m1" type="number" min="0" max="100" value="${a1}" style="width:100%;padding:6px"></label>
+            <label style="display:block;margin-bottom:8px">Test Execution %<input id="milestone_m2" type="number" min="0" max="100" value="${a2}" style="width:100%;padding:6px"></label>
+            <label style="display:block;margin-bottom:8px">UAT %<input id="milestone_m3" type="number" min="0" max="100" value="${a3}" style="width:100%;padding:6px"></label>
+          `;
+          openCardPopover();
           return;
         }
         if(target==='blockers'){
@@ -807,6 +818,15 @@
             document.querySelectorAll('.progress-bar')[0].style.width = m1v + '%';
             document.querySelectorAll('.progress-bar')[1].style.width = m2v + '%';
             document.querySelectorAll('.progress-bar')[2].style.width = m3v + '%';
+          }else if(currentCard==='milestones'){
+            const mm1 = Number(document.getElementById('milestone_m1')?.value || 0);
+            const mm2 = Number(document.getElementById('milestone_m2')?.value || 0);
+            const mm3 = Number(document.getElementById('milestone_m3')?.value || 0);
+            progressChart.data.datasets[1].data = [mm1,mm2,mm3];
+            progressChart.update();
+            document.querySelectorAll('.progress-bar')[0].style.width = mm1 + '%';
+            document.querySelectorAll('.progress-bar')[1].style.width = mm2 + '%';
+            document.querySelectorAll('.progress-bar')[2].style.width = mm3 + '%';
           }
         closeCardPopover(); currentCard=null;
         saveState();
