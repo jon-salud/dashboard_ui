@@ -661,6 +661,21 @@
       const cardCancelBtn = document.getElementById('cardCancelBtn');
       let currentCard = null;
 
+      // focus trap helpers for centered card popover
+      let lastFocusedElement = null;
+      function trapKeydown(e){
+        if(!cardPopover || cardPopover.style.display!=='block') return;
+        if(e.key === 'Escape') { e.preventDefault(); closeCardPopover(); return; }
+        if(e.key !== 'Tab') return;
+        const focusable = Array.from(cardPopover.querySelectorAll('a[href],button:not([disabled]),textarea, input, select')).filter(el=>el.offsetParent !== null);
+        if(focusable.length===0) return;
+        const first = focusable[0]; const last = focusable[focusable.length-1];
+        if(e.shiftKey){ if(document.activeElement === first){ e.preventDefault(); last.focus(); } }
+        else { if(document.activeElement === last){ e.preventDefault(); first.focus(); } }
+      }
+      function openCardPopover(){ lastFocusedElement = document.activeElement; cardPopover.style.display='block'; const firstFocusable = cardEditBody.querySelector('input,select,textarea,button'); if(firstFocusable) firstFocusable.focus(); document.addEventListener('keydown', trapKeydown); }
+      function closeCardPopover(){ cardPopover.style.display='none'; document.removeEventListener('keydown', trapKeydown); if(lastFocusedElement && lastFocusedElement.focus) lastFocusedElement.focus(); }
+
       cardEditButtons.forEach(b=>b.addEventListener('click', (e)=>{
         const target = e.currentTarget.getAttribute('data-target');
         currentCard = target;
@@ -686,7 +701,7 @@
             <label style="display:block;margin-bottom:8px">Test Execution %<input id="kpi_edit_m2" type="number" min="0" max="100" value="${m2}" style="width:100%;padding:6px"></label>
             <label style="display:block;margin-bottom:8px">UAT %<input id="kpi_edit_m3" type="number" min="0" max="100" value="${m3}" style="width:100%;padding:6px"></label>
           `;
-          cardPopover.style.display = 'block';
+          openCardPopover();
           return;
         }
         if(target === 'charts'){
@@ -755,10 +770,9 @@
             <label style="display:block;margin-bottom:8px">Open critical defects<input id="cf-critical" type="number" value="${c}" style="width:100%;padding:6px"></label>
           `;
         }
-        cardPopover.style.display='block';
+        openCardPopover();
       }));
-
-      cardCancelBtn.addEventListener('click', ()=>{ cardPopover.style.display='none'; currentCard=null; });
+      cardCancelBtn.addEventListener('click', ()=>{ closeCardPopover(); currentCard=null; });
       cardSaveBtn.addEventListener('click', ()=>{
         if(currentCard==='blockers'){
           const blocks = Array.from(cardEditBody.querySelectorAll('.blocker-item'));
@@ -796,7 +810,7 @@
             document.querySelectorAll('.progress-bar')[1].style.width = m2v + '%';
             document.querySelectorAll('.progress-bar')[2].style.width = m3v + '%';
           }
-        cardPopover.style.display='none'; currentCard=null;
+        closeCardPopover(); currentCard=null;
         saveState();
       });
     })();
