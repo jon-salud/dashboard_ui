@@ -214,31 +214,9 @@
     <div class="footer-note">Built with HTML, CSS Grid and Chart.js • Sample data only</div>
   </div>
 
-  <!-- Edit Popover UI -->
+  <!-- Export Button -->
   <button id="exportBtn" aria-label="Export" style="position:fixed;right:18px;bottom:18px;background:#111827;color:white;border:none;border-radius:999px;padding:12px 14px;box-shadow:0 6px 18px rgba(2,6,23,0.25);cursor:pointer;z-index:999">Export</button>
-  <div id="editPopover" style="position:fixed;right:18px;bottom:72px;background:white;border:1px solid #e6edf6;border-radius:8px;padding:14px;box-shadow:0 12px 30px rgba(2,6,23,0.12);width:320px;display:none;z-index:999">
-    <h4 style="margin:0 0 8px 0;font-size:15px">Edit Dashboard</h4>
-    <form id="editForm" style="display:grid;gap:8px">
-      <label style="font-size:13px;color:var(--muted)">Test Cases Executed (%)<input name="executed" type="number" min="0" max="100" value="72" style="width:100%;padding:6px;margin-top:4px"></label>
-      <label style="font-size:13px;color:var(--muted)">Test Cases Passed (%)<input name="passed" type="number" min="0" max="100" value="65" style="width:100%;padding:6px;margin-top:4px"></label>
-      <label style="font-size:13px;color:var(--muted)">Defects Open (count)<input name="defects" type="number" min="0" value="18" style="width:100%;padding:6px;margin-top:4px"></label>
-      <label style="font-size:13px;color:var(--muted)">Delay vs Plan (days)<input name="delay" type="number" value="2" style="width:100%;padding:6px;margin-top:4px"></label>
-
-      <hr style="border:none;border-top:1px solid #eef3fb;margin:8px 0">
-      <label style="font-size:13px;color:var(--muted)">Test Design %<input name="m1" type="number" min="0" max="100" value="92" style="width:100%;padding:6px;margin-top:4px"></label>
-      <label style="font-size:13px;color:var(--muted)">Test Execution %<input name="m2" type="number" min="0" max="100" value="68" style="width:100%;padding:6px;margin-top:4px"></label>
-      <label style="font-size:13px;color:var(--muted)">UAT %<input name="m3" type="number" min="0" max="100" value="40" style="width:100%;padding:6px;margin-top:4px"></label>
-
-      <div style="display:flex;gap:8px;margin-top:6px">
-        <button type="button" id="saveBtn" style="flex:1;padding:8px;background:var(--accent);color:#fff;border-radius:6px;border:none;cursor:pointer">Save</button>
-        <button type="button" id="cancelBtn" style="flex:1;padding:8px;background:#f3f6fb;color:#234;border-radius:6px;border:1px solid #e6edf6;cursor:pointer">Cancel</button>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-          <button type="button" id="openModalBtn" style="flex:1;padding:8px;background:#fff;color:#234;border-radius:6px;border:1px solid #e6edf6;cursor:pointer">Open Editor</button>
-          <button type="button" id="exportQuickBtn" style="flex:1;padding:8px;background:#111827;color:#fff;border-radius:6px;border:none;cursor:pointer">Export Snapshot</button>
-        </div>
-    </form>
-  </div>
+  <!-- keep modal editor triggers inside the editor modal UI -->
 
   <!-- Card edit popover -->
   <div id="cardEditPopover" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:8px;padding:14px;box-shadow:0 12px 30px rgba(2,6,23,0.12);display:none;z-index:1001;width:420px;max-width:95%">
@@ -380,53 +358,7 @@
   </script>
   <script>
     // Popover behaviour
-    const editBtn = document.getElementById('editBtn');
-    const pop = document.getElementById('editPopover');
-    const editForm = document.getElementById('editForm');
-    const saveBtn = document.getElementById('saveBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
-
-    function openPopover(){ pop.style.display='block'; }
-    function closePopover(){ pop.style.display='none'; }
-    if(editBtn){
-      editBtn.addEventListener('click', ()=>{ pop.style.display = pop.style.display === 'block' ? 'none' : 'block'; });
-      editBtn.addEventListener('click', populateForm);
-    }
-    cancelBtn.addEventListener('click', closePopover);
-
-    // populate form with current values
-    function populateForm(){
-      editForm.executed.value = parseInt(document.getElementById('kpi-executed').textContent) || 0;
-      editForm.passed.value = parseInt(document.getElementById('kpi-passed').textContent) || 0;
-      editForm.defects.value = parseInt(document.getElementById('kpi-defects').textContent) || 0;
-      editForm.delay.value = parseInt(document.getElementById('kpi-delay').textContent) || 0;
-      // milestones from progress chart (datasets planned vs actual)
-      editForm.m1.value = progressChart.data.datasets[1].data[0] || 0;
-      editForm.m2.value = progressChart.data.datasets[1].data[1] || 0;
-      editForm.m3.value = progressChart.data.datasets[1].data[2] || 0;
-    }
-
-    saveBtn.addEventListener('click', ()=>{
-      // KPIs
-      document.getElementById('kpi-executed').textContent = editForm.executed.value + '%';
-      document.getElementById('kpi-passed').textContent = editForm.passed.value + '%';
-      document.getElementById('kpi-defects').textContent = editForm.defects.value;
-      document.getElementById('kpi-delay').textContent = editForm.delay.value + ' days';
-
-      // Update progress chart actuals
-      const a1 = Number(editForm.m1.value);
-      const a2 = Number(editForm.m2.value);
-      const a3 = Number(editForm.m3.value);
-      progressChart.data.datasets[1].data = [a1,a2,a3];
-      progressChart.update();
-
-      // Update milestone bars in table (visual only)
-      document.querySelectorAll('.progress-bar')[0].style.width = editForm.m1.value + '%';
-      document.querySelectorAll('.progress-bar')[1].style.width = editForm.m2.value + '%';
-      document.querySelectorAll('.progress-bar')[2].style.width = editForm.m3.value + '%';
-
-      closePopover();
-    });
+    // small popover removed — KPIs now edited via centered card popover
     
     // Modal editor handlers
     const editorModal = document.getElementById('editorModal');
