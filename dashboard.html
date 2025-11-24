@@ -80,6 +80,10 @@
     }
 
     .footer-note{font-size:13px;color:var(--muted);text-align:center;padding:6px}
+    .pill-toggle{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid #e6edf6;background:#fff;cursor:pointer;font-size:13px}
+    .pill-toggle.active{background:linear-gradient(90deg,var(--accent),#60a5fa);color:#fff;border-color:transparent}
+    .pill-toggle .pill-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:rgba(0,0,0,0.06)}
+    .pill-toggle.active .pill-badge{background:rgba(255,255,255,0.18)}
   </style>
 </head>
 <body>
@@ -272,7 +276,7 @@
               <option value="monthly">Monthly</option>
             </select>
           </label>
-          <button id="toggleAutoFill" type="button" style="padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Auto-fill: OFF ▾</button>
+          <button id="toggleAutoFill" type="button" class="pill-toggle" aria-pressed="false">Auto-fill <span class="pill-badge">OFF</span></button>
           <div id="autoFillPanel" style="display:none;margin-left:8px;align-items:center;gap:8px">
             <label style="display:flex;gap:6px;align-items:center;font-size:13px">From<input id="plannedStart" type="number" value="1000" style="width:80px;padding:6px"></label>
             <label style="display:flex;gap:6px;align-items:center;font-size:13px">To<input id="plannedEnd" type="number" value="0" style="width:80px;padding:6px"></label>
@@ -484,10 +488,13 @@
     const toggleAutoBtn = document.getElementById('toggleAutoFill');
     const autoFillPanel = document.getElementById('autoFillPanel');
     if(toggleAutoBtn && autoFillPanel){
+      const badge = toggleAutoBtn.querySelector('.pill-badge');
       toggleAutoBtn.addEventListener('click', ()=>{
         const open = autoFillPanel.style.display !== 'none';
         autoFillPanel.style.display = open ? 'none' : 'flex';
-        toggleAutoBtn.textContent = open ? 'Auto-fill: OFF ▾' : 'Auto-fill: ON ▴';
+        toggleAutoBtn.setAttribute('aria-pressed', String(!open));
+        toggleAutoBtn.classList.toggle('active', !open);
+        if(badge) badge.textContent = open ? 'OFF' : 'ON';
       });
     }
 
