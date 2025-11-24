@@ -227,7 +227,62 @@
         <button type="button" id="saveBtn" style="flex:1;padding:8px;background:var(--accent);color:#fff;border-radius:6px;border:none;cursor:pointer">Save</button>
         <button type="button" id="cancelBtn" style="flex:1;padding:8px;background:#f3f6fb;color:#234;border-radius:6px;border:1px solid #e6edf6;cursor:pointer">Cancel</button>
       </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button type="button" id="openModalBtn" style="flex:1;padding:8px;background:#fff;color:#234;border-radius:6px;border:1px solid #e6edf6;cursor:pointer">Open Editor</button>
+        <button type="button" id="exportQuickBtn" style="flex:1;padding:8px;background:#111827;color:#fff;border-radius:6px;border:none;cursor:pointer">Export Snapshot</button>
+      </div>
     </form>
+  </div>
+
+  <!-- Modal Editor -->
+  <div id="editorModal" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.5);align-items:center;justify-content:center;z-index:1000;padding:20px">
+    <div style="background:#fff;border-radius:10px;max-width:900px;width:100%;max-height:90vh;overflow:auto;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h3 style="margin:0">Detailed Editor</h3>
+        <button id="closeModalBtn" style="background:transparent;border:none;font-size:18px;cursor:pointer">✕</button>
+      </div>
+
+      <section style="margin-bottom:12px">
+        <h4 style="margin:0 0 8px 0">Progress vs Plan (per phase)</h4>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button id="progressExportCsv" style="padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Export CSV</button>
+          <button id="progressImportCsv" style="padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Import CSV</button>
+          <input type="file" id="progressCsvInput" accept="text/csv" style="display:none">
+        </div>
+        <table id="progressTable" style="width:100%;border-collapse:collapse">
+          <thead><tr><th style="text-align:left">Phase</th><th>Planned %</th><th>Actual %</th></tr></thead>
+          <tbody>
+            <tr><td>Test Design</td><td><input class="p-planned" type="number" min="0" max="100" value="95" style="width:100px"></td><td><input class="p-actual" type="number" min="0" max="100" value="92" style="width:100px"></td></tr>
+            <tr><td>Test Execution</td><td><input class="p-planned" type="number" min="0" max="100" value="85" style="width:100px"></td><td><input class="p-actual" type="number" min="0" max="100" value="68" style="width:100px"></td></tr>
+            <tr><td>UAT</td><td><input class="p-planned" type="number" min="0" max="100" value="80" style="width:100px"></td><td><input class="p-actual" type="number" min="0" max="100" value="40" style="width:100px"></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h4 style="margin:0 0 8px 0">Burndown (time series)</h4>
+        <div style="margin-bottom:8px;display:flex;gap:8px">
+          <button id="addRowBtn" style="padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Add Row</button>
+          <button id="burndownExportCsv" style="padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Export CSV</button>
+          <button id="burndownImportCsv" style="padding:6px 8px;border-radius:6px;border:1px solid #e6edf6;background:#fff;cursor:pointer">Import CSV</button>
+          <input type="file" id="burndownCsvInput" accept="text/csv" style="display:none">
+        </div>
+        <table id="burndownTable" style="width:100%;border-collapse:collapse">
+          <thead><tr><th style="text-align:left">Date</th><th>Planned Remaining</th><th>Actual Remaining</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><input class="b-date" type="date" value="2025-11-01" style="width:160px"></td><td><input class="b-planned" type="number" value="1000" style="width:120px"></td><td><input class="b-actual" type="number" value="1000" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
+            <tr><td><input class="b-date" type="date" value="2025-11-04" style="width:160px"></td><td><input class="b-planned" type="number" value="800" style="width:120px"></td><td><input class="b-actual" type="number" value="920" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
+            <tr><td><input class="b-date" type="date" value="2025-11-07" style="width:160px"></td><td><input class="b-planned" type="number" value="600" style="width:120px"></td><td><input class="b-actual" type="number" value="780" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="modalSave" style="flex:1;padding:8px;background:var(--accent);color:#fff;border-radius:6px;border:none;cursor:pointer">Save</button>
+        <button id="modalExport" style="flex:1;padding:8px;background:#111827;color:#fff;border-radius:6px;border:none;cursor:pointer">Export Snapshot</button>
+        <button id="modalCancel" style="flex:1;padding:8px;background:#f3f6fb;color:#234;border-radius:6px;border:1px solid #e6edf6;cursor:pointer">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -354,6 +409,265 @@
 
       closePopover();
     });
+    
+    // Modal editor handlers
+    const editorModal = document.getElementById('editorModal');
+    const openModalBtn = document.getElementById('openModalBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const modalSave = document.getElementById('modalSave');
+    const modalCancel = document.getElementById('modalCancel');
+    const modalExport = document.getElementById('modalExport');
+    const exportQuickBtn = document.getElementById('exportQuickBtn');
+
+    openModalBtn.addEventListener('click', ()=>{ editorModal.style.display='flex'; populateModal(); });
+    closeModalBtn.addEventListener('click', ()=>{ editorModal.style.display='none'; });
+    modalCancel.addEventListener('click', ()=>{ editorModal.style.display='none'; });
+
+    // Add/remove burndown rows
+    document.getElementById('addRowBtn').addEventListener('click', ()=>{
+      const tbody = document.querySelector('#burndownTable tbody');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><input class="b-date" type="date" value="" style="width:160px"></td><td><input class="b-planned" type="number" value="0" style="width:120px"></td><td><input class="b-actual" type="number" value="0" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
+      tbody.appendChild(tr);
+    });
+    document.addEventListener('click', (e)=>{ if(e.target && e.target.classList && e.target.classList.contains('removeRow')) e.target.closest('tr').remove(); });
+
+    function populateModal(){
+      // progress: set inputs from current chart
+      const planned = progressChart.data.datasets[0].data;
+      const actual = progressChart.data.datasets[1].data;
+      const pPlanned = document.querySelectorAll('.p-planned');
+      const pActual = document.querySelectorAll('.p-actual');
+      pPlanned.forEach((inp,i)=>inp.value = planned[i] || 0);
+      pActual.forEach((inp,i)=>inp.value = actual[i] || 0);
+      // burndown: clear tbody and fill from burndownChart
+      const bTbody = document.querySelector('#burndownTable tbody');
+      bTbody.innerHTML = '';
+      const labels = burndownChart.data.labels || [];
+      const pData = burndownChart.data.datasets[0].data || [];
+      const aData = burndownChart.data.datasets[1].data || [];
+      for(let i=0;i<labels.length;i++){
+        const row = document.createElement('tr');
+        row.innerHTML = `<td><input class="b-date" type="date" value="${labels[i]}" style="width:160px"></td><td><input class="b-planned" type="number" value="${pData[i]||0}" style="width:120px"></td><td><input class="b-actual" type="number" value="${aData[i]||0}" style="width:120px"></td><td><button class="removeRow" style="border:none;background:transparent;cursor:pointer">Remove</button></td>`;
+        bTbody.appendChild(row);
+      }
+    }
+
+    function readBurndownTable(){
+      const rows = Array.from(document.querySelectorAll('#burndownTable tbody tr'));
+      const labels = rows.map(r=>r.querySelector('.b-date').value || '');
+      const planned = rows.map(r=>Number(r.querySelector('.b-planned').value || 0));
+      const actual = rows.map(r=>Number(r.querySelector('.b-actual').value || 0));
+      return {labels,planned,actual};
+    }
+
+    // Persistence: save/load to localStorage
+    const STORAGE_KEY = 'dashboard_demo_state_v1';
+    function saveState(){
+      const state = {
+        kpis: {
+          executed: document.getElementById('kpi-executed').textContent.replace('%','')||0,
+          passed: document.getElementById('kpi-passed').textContent.replace('%','')||0,
+          defects: document.getElementById('kpi-defects').textContent||0,
+          delay: document.getElementById('kpi-delay').textContent.replace(' days','')||0
+        },
+        progress: {
+          planned: progressChart.data.datasets[0].data,
+          actual: progressChart.data.datasets[1].data
+        },
+        burndown: {
+          labels: burndownChart.data.labels,
+          planned: burndownChart.data.datasets[0].data,
+          actual: burndownChart.data.datasets[1].data
+        }
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY); if(!raw) return;
+        const state = JSON.parse(raw);
+        if(state.kpis){
+          document.getElementById('kpi-executed').textContent = (state.kpis.executed||0) + '%';
+          document.getElementById('kpi-passed').textContent = (state.kpis.passed||0) + '%';
+          document.getElementById('kpi-defects').textContent = state.kpis.defects||0;
+          document.getElementById('kpi-delay').textContent = (state.kpis.delay||0) + ' days';
+        }
+        if(state.progress){
+          progressChart.data.datasets[0].data = state.progress.planned || progressChart.data.datasets[0].data;
+          progressChart.data.datasets[1].data = state.progress.actual || progressChart.data.datasets[1].data;
+          progressChart.update();
+        }
+        if(state.burndown){
+          burndownChart.data.labels = state.burndown.labels || burndownChart.data.labels;
+          burndownChart.data.datasets[0].data = state.burndown.planned || burndownChart.data.datasets[0].data;
+          burndownChart.data.datasets[1].data = state.burndown.actual || burndownChart.data.datasets[1].data;
+          burndownChart.update();
+        }
+      }catch(e){console.warn('loadState error',e)}
+    }
+    // load on start
+    loadState();
+
+    // Save to localStorage on chart updates and KPI changes
+    const origProgressUpdate = progressChart.update.bind(progressChart);
+    progressChart.update = function(){ origProgressUpdate(); saveState(); };
+    const origBurndownUpdate = burndownChart.update.bind(burndownChart);
+    burndownChart.update = function(){ origBurndownUpdate(); saveState(); };
+
+    // Also save when KPI values change via the popover save
+    const origSaveClick = saveBtn.onclick;
+
+
+    modalSave.addEventListener('click', ()=>{
+      // apply progress table
+      const pPlanned = Array.from(document.querySelectorAll('.p-planned')).map(i=>Number(i.value||0));
+      const pActual = Array.from(document.querySelectorAll('.p-actual')).map(i=>Number(i.value||0));
+      progressChart.data.datasets[0].data = pPlanned;
+      progressChart.data.datasets[1].data = pActual;
+      progressChart.update();
+      // update milestone bars
+      document.querySelectorAll('.progress-bar')[0].style.width = pActual[0] + '%';
+      document.querySelectorAll('.progress-bar')[1].style.width = pActual[1] + '%';
+      document.querySelectorAll('.progress-bar')[2].style.width = pActual[2] + '%';
+
+      // apply burndown
+      const bd = readBurndownTable();
+      burndownChart.data.labels = bd.labels;
+      burndownChart.data.datasets[0].data = bd.planned;
+      burndownChart.data.datasets[1].data = bd.actual;
+      burndownChart.update();
+
+      editorModal.style.display = 'none';
+    });
+
+    function generateSnapshot(){
+      // Create a clone of document HTML and strip edit elements
+      const docClone = document.documentElement.cloneNode(true);
+      // remove edit button, popover and modal
+      const removeSelectors = ['#editBtn','#editPopover','#editorModal'];
+      removeSelectors.forEach(sel=>{ const el = docClone.querySelector(sel); if(el) el.remove(); });
+      // also remove any scripts that include 'Chart' to avoid runtime errors — but embed chart images by converting canvases to dataURL
+      // convert canvases to images
+      const canvases = Array.from(document.querySelectorAll('canvas'));
+      canvases.forEach((c)=>{
+        const data = c.toDataURL('image/png');
+        const img = document.createElement('img'); img.src = data; img.style.maxWidth='100%';
+        const parent = c.parentElement;
+        parent.replaceChild(img, c);
+      });
+      // build HTML string
+      const html = '<!doctype html>\n' + docClone.outerHTML;
+      return html;
+    }
+
+    function downloadSnapshot(){
+      const html = generateSnapshot();
+      const blob = new Blob([html], {type: 'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const today = new Date().toISOString().slice(0,10);
+      a.href = url; a.download = `dashboard_snapshot_${today}.html`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+
+    modalExport.addEventListener('click', downloadSnapshot);
+    exportQuickBtn.addEventListener('click', downloadSnapshot);
+
+    // CSV helpers
+    function arrayToCsv(rows){ return rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n'); }
+    function downloadCsv(filename, content){ const blob = new Blob([content], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url); }
+
+    // Progress CSV export/import
+    document.getElementById('progressExportCsv').addEventListener('click', ()=>{
+      const rows = [['Phase','Planned','Actual']];
+      const phases = ['Test Design','Test Execution','UAT'];
+      const planned = progressChart.data.datasets[0].data;
+      const actual = progressChart.data.datasets[1].data;
+      for(let i=0;i<phases.length;i++) rows.push([phases[i],planned[i]||'',actual[i]||'']);
+      downloadCsv('progress.csv', arrayToCsv(rows));
+    });
+    document.getElementById('progressImportCsv').addEventListener('click', ()=>{ document.getElementById('progressCsvInput').click(); });
+    document.getElementById('progressCsvInput').addEventListener('change', (e)=>{
+      const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>{
+        const lines = r.result.split(/\r?\n/).filter(Boolean).map(l=>l.split(/, */));
+        // assume header + three rows
+        if(lines.length>=4){
+          const p=[]; const a=[];
+          for(let i=1;i<lines.length;i++){ p.push(Number(lines[i][1]||0)); a.push(Number(lines[i][2]||0)); }
+          progressChart.data.datasets[0].data = p; progressChart.data.datasets[1].data = a; progressChart.update();
+        }
+      }; r.readAsText(f);
+    });
+
+    // Burndown CSV export/import
+    document.getElementById('burndownExportCsv').addEventListener('click', ()=>{
+      const rows = [['Date','Planned','Actual']];
+      const labels = burndownChart.data.labels || [];
+      const p = burndownChart.data.datasets[0].data || [];
+      const a = burndownChart.data.datasets[1].data || [];
+      for(let i=0;i<labels.length;i++) rows.push([labels[i]||'',p[i]||'',a[i]||'']);
+      downloadCsv('burndown.csv', arrayToCsv(rows));
+    });
+    document.getElementById('burndownImportCsv').addEventListener('click', ()=>{ document.getElementById('burndownCsvInput').click(); });
+    document.getElementById('burndownCsvInput').addEventListener('change', (e)=>{
+      const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>{
+        const lines = r.result.split(/\r?\n/).filter(Boolean).map(l=>l.split(/, */));
+        if(lines.length>=2){
+          const labels=[]; const p=[]; const a=[];
+          for(let i=1;i<lines.length;i++){ labels.push(lines[i][0]||''); p.push(Number(lines[i][1]||0)); a.push(Number(lines[i][2]||0)); }
+          burndownChart.data.labels = labels; burndownChart.data.datasets[0].data = p; burndownChart.data.datasets[1].data = a; burndownChart.update();
+        }
+      }; r.readAsText(f);
+    });
+
+    // Enhanced snapshot export: inline Google Fonts CSS by fetching font file and encoding as base64
+    async function inlineFontsAndGenerate(){
+      // fetch the CSS for the Inter font we use
+      const cssUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap';
+      const cssRes = await fetch(cssUrl); const cssText = await cssRes.text();
+      // find font URLs and inline them (simple approach)
+      const urls = Array.from(cssText.matchAll(/url\((https:\/\/[^)]+)\)/g)).map(m=>m[1]);
+      let inlinedCss = cssText;
+      for(const u of urls){
+        try{
+          const res = await fetch(u); const buf = await res.arrayBuffer(); const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+          const mime = res.headers.get('content-type') || 'font/woff2';
+          inlinedCss = inlinedCss.replace(new RegExp(u.replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&'),'g'), `data:${mime};base64,${b64}`);
+        }catch(e){console.warn('font inline failed',e)}
+      }
+      const fontStyle = `<style>${inlinedCss}</style>`;
+      // generate snapshot HTML string
+      const docClone = document.documentElement.cloneNode(true);
+      ['#editBtn','#editPopover','#editorModal','#progressCsvInput','#burndownCsvInput'].forEach(sel=>{ const el = docClone.querySelector(sel); if(el) el.remove(); });
+      // convert canvases to images (use originals from live DOM)
+      const canvases = Array.from(document.querySelectorAll('canvas'));
+      canvases.forEach((c)=>{
+        const data = c.toDataURL('image/png');
+        const img = document.createElement('img'); img.src = data; img.style.maxWidth='100%';
+        const parent = c.parentElement;
+        // replace in the clone
+        const selector = c.id ? `#${c.id}` : null;
+        const cloneCanvas = selector ? docClone.querySelector(selector) : null;
+        if(cloneCanvas && cloneCanvas.parentElement) cloneCanvas.parentElement.replaceChild(img.cloneNode(true), cloneCanvas);
+      });
+      // inject inlined font CSS into head
+      const head = docClone.querySelector('head'); if(head) head.insertAdjacentHTML('beforeend', fontStyle);
+      return '<!doctype html>\n' + docClone.outerHTML;
+    }
+
+    async function downloadSnapshotEnhanced(){
+      const html = await inlineFontsAndGenerate();
+      const blob = new Blob([html], {type: 'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const today = new Date().toISOString().slice(0,10);
+      a.href = url; a.download = `dashboard_snapshot_${today}.html`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+    modalExport.removeEventListener('click', downloadSnapshot);
+    modalExport.addEventListener('click', downloadSnapshotEnhanced);
+    exportQuickBtn.removeEventListener('click', downloadSnapshot);
+    exportQuickBtn.addEventListener('click', downloadSnapshotEnhanced);
   </script>
 </body>
 </html>
